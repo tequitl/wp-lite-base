@@ -1,0 +1,19 @@
+
+{
+  "name": "version-control-your-content",
+  "version": "1.0.0",
+  "main": "Gruntfile.js",
+  "author": "Haris Amjed",
+  "scripts" : {
+    "start" : "grunt default" ,
+    "readme" : "grunt readme",
+    "i18n" : "grunt i18n",
+    "pot" : "grunt makepot"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.5",
+    "grunt-wp-i18n": "~0.5.0",
+    "grunt-wp-readme-to-markdown": "~1.0.0",
+    "grunt-wp-makepot": "~1.0.0"
+  }
+}

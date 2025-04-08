@@ -1,0 +1,14 @@
+{
+  "name": "harisamjed/version-control-your-content",
+  "description": "Never lose the work you're doing in your WordPress backend or wp-admin area. All changes you make on any backend page will be version controlled securely using Git services.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "autoload": {
+    "psr-4": {
+      "VCYC\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=7.2.24"
+  }
+}

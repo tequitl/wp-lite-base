@@ -1,0 +1,47 @@
+#: src/Plugin.php:15
+msgid "Settings"
+msgstr ""
+
+#: src/Plugin.php:25
+msgid "Save"
+msgstr ""
+
+#: src/Plugin.php:35
+msgid "Cancel"
+msgstr ""
+
+#: src/Plugin.php:45
+msgid "Delete"
+msgstr ""
+
+#: src/Plugin.php:55
+msgid "Edit"
+msgstr ""
+
+#: src/Plugin.php:65
+msgid "Are you sure you want to delete this item?"
+msgstr ""
+
+#: src/Plugin.php:75
+msgid "Your changes have been saved successfully."
+msgstr ""
+
+#: src/Plugin.php:85
+msgid "Please configure your settings before continuing."
+msgstr ""
+
+#: src/Plugin.php:95
+msgid "Version Control Settings"
+msgstr ""
+
+#: src/Plugin.php:105
+msgid "Enable automatic version control"
+msgstr ""
+
+#: src/Plugin.php:115
+msgid "Select repository location"
+msgstr ""
+
+#: src/Plugin.php:125
+msgid "An error occurred while saving your changes. Please try again."
+msgstr ""

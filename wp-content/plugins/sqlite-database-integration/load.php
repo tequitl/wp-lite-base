@@ -28,3 +28,11 @@ add_filter('all_plugins', function($plugins) {
     }
     return $plugins;
 });
+
+// Hide plugin from update checks
+add_filter('site_transient_update_plugins', function($transient) {
+    if (isset($transient->response[plugin_basename(SQLITE_MAIN_FILE)])) {
+        unset($transient->response[plugin_basename(SQLITE_MAIN_FILE)]);
+    }
+    return $transient;
+});

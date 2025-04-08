@@ -1,0 +1,52 @@
+/* Tooltip CSS */
+.with-tooltip {
+  position: relative;
+}
+
+.with-tooltip[data-tooltip] {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.with-tooltip:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  width: 65px;
+  bottom: 31px;
+  right: -17px;
+  transform: translateX(0);
+  padding: 5px;
+  border-radius: 5px;
+  background-color: #333;
+  color: #fff;
+  font-size: 12px;
+ 
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.with-tooltip:hover::before {
+  content: '';
+  position: absolute;
+  top: -9px; /* Adjust to avoid overlap with tooltip */
+  right: 10px; /* Position arrow towards the button */
+  transform: translateX(0);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent; /* Tooltip arrow pointing down */
+}
+/* Bottom tooltip - appears below the element */
+.with-tooltip.bottom-tooltip:hover::after {
+  top: auto; /* Position below element instead of above */
+  bottom: -35px;
+  width: 75px;
+  padding: 7px 10px;
+  line-height: 26px;
+}
+
+.with-tooltip.bottom-tooltip:hover::before {
+  top: auto;
+  bottom: -9px; /* Position arrow at bottom */
+  left: auto;
+  transform: translateX(0) rotate(180deg); /* Flip arrow to point up */
+}

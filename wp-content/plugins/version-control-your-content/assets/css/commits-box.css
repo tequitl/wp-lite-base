@@ -1,0 +1,118 @@
+/* Import utility css */
+@import url('switch-cb.css');
+@import url('tooltip.css');
+
+.vcyc-github-panel {
+    background: #fff;
+    border: 1px solid #ddd;
+    width: 100%;  /* Take full width of the container */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+  }
+.vcyc-control-wrapper {
+   display: flex;
+   width: 100%;
+   align-items: center;
+   justify-content: space-between;
+}
+.vcyc-control {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    gap: 10px;
+    border-top: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0 10px 10px 0px;
+    padding: 10px;
+    background-color: #fff9f9;
+    width: fit-content;
+    margin-top: 10px;
+}
+
+.commits-wrapper {
+    display: flex
+    ;
+    flex-direction: column;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.commits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    font-size: 12px;
+}
+
+/* commits-list */
+.commits-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 6px;
+    margin-bottom: 0;
+}
+
+.commits-list li:nth-child(even) {
+    background-color: #ffffff;
+}
+
+.commits-list li:nth-child(odd) {
+    background-color: #fff9f9;
+}
+
+.commits-list li a {
+    flex-grow: 1;
+    text-decoration: none;
+}
+
+.commits-list .action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+
+
+button.view-commit, button.revert-commit {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+button.view-commit{
+    color: #1f883d;
+}
+button.revert-commit{
+    color: #cd4a4a;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    gap: 10px;
+}
+#vcyc_meta_box.postbox .inside {
+    margin: 0;
+    padding: 0;
+}
+
+.vcyc-hide{
+    display: none;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.commits-list li.no-versions-yet{
+    color: #cbb6b6;
+    text-align: center;
+    display: block;
+}
+
+#vcyc-options-pages-box{
+   max-width: 350px;
+}

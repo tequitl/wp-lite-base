@@ -1,0 +1,38 @@
+@import './tooltip.css';
+
+
+.vcyc-customizer-github{
+  cursor: pointer;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: calc(100% - 4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  border-top: 4px solid #f0f0f1;
+  border-right: 1px solid #dcdcde;
+  border-left: 1px solid #dcdcde;
+  border-bottom: none;
+  color: #3c434a;
+  fill: #3c434a;
+  stroke: #3c434a;
+}
+.vcyc-customizer-github:hover{
+  background: #fff;
+  color: #2271b1;
+  fill: #2271b1;
+  stroke: #2271b1;
+  border-top-color: #2271b1;
+  box-shadow: none;
+  outline: 1px solid transparent;
+}
+
+.vcyc-customizer-github svg path{
+  fill: #1f2328;
+}
+.vcyc-customizer-github:hover svg path{
+  fill: #2271b1;
+}

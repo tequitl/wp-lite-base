@@ -1,0 +1,28 @@
+
+#wpadminbar ul li#wp-admin-bar-github_api_rate_limits {
+  background-color: #6f6f4f;
+}
+#wpadminbar ul li#wp-admin-bar-github_api_rate_limits .ab-item {
+  display: flex;
+  align-items: center;
+}   
+#wpadminbar ul li#wp-admin-bar-github_api_rate_limits .github-api-rate-limits-icon {
+  background-image: url(../img/git.svg);
+  background-size: 20px;
+  background-repeat: no-repeat;
+  background-position: 5px center;
+  display: inline-block;
+  width: 28px;
+  height: 20px;
+}
+#wpadminbar ul li#wp-admin-bar-github_api_rate_limits .ab-item .github-api-rate-limits {
+  padding-left: 5px;
+}
+#wpadminbar ul li#wp-admin-bar-github_api_rate_limits .ab-item .github-api-rate-limits-reset {
+  padding-left: 5px;
+}
+
+.vcyc-wrap.how-it-works, .vcyc-wrap.how-it-works p{
+  font-size: 20px; 
+  line-height:30px;
+}

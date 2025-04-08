@@ -1,0 +1,287 @@
+@import url('switch-cb.css');
+
+ .vcyc-icon{
+  transition: fill 0.3s; /* Smooth transition */
+ }
+  .vcyc-icon:hover{
+    fill: #0073aa; /* Change color on hover */
+  }
+.vcyc .content-wrap{
+    display: flex; 
+    align-items: flex-start;
+  }
+.vcyc .left{
+  display: flex;
+  flex-grow: 1;
+}
+.vcyc .right-sidebar{
+  width: 300px;
+  max-width: 50%;
+  padding: 15px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  flex-direction: column;
+}
+.vcyc .right-sidebar h3{
+  margin: 0;
+}
+.vcyc .right-sidebar p{
+  font-size: 16px;
+  line-height: 22px;
+}
+.vcyc .right-sidebar ol{
+  margin-left: 16px;
+}
+.vcyc .right-sidebar ol li{
+  margin-bottom: 20px;
+}
+.vcyc .right-sidebar b{
+  font-size:16px;
+}
+
+
+.heading-wrap{
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  column-gap: 10px;
+  border-bottom: 1px solid #ddd;
+}
+.heading-wrap h1, .heading-wrap h2{
+  margin: 0;
+}
+.heading-wrap h2{
+  font-weight: 400;
+  padding-top: 10px;
+}
+textarea.github-pat{
+  height: 60px;
+  padding: 5px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 transparent;
+}
+.starting-instructions{
+  font-size: 14px;
+}
+
+.vcyc button{
+  background: #1f883d;
+  color: #fff;
+  border: 0;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0px 1px 0px rgba(31, 35, 40, 0.1);
+    margin-top: 10px;
+}
+.vcyc-setup button:hover{
+  background: #1a7f37;
+}
+
+.new-git-conn{
+  background: #fafafa; 
+  padding: 15px;
+  border: 1px solid #ddd;
+  font-size: 18px;
+  border-radius: 10px;
+  width: 500px;
+} 
+.new-git-conn h3{
+  margin: 0; 
+  font-size: 18px;
+}
+.new-git-conn .field-group{
+  display: flex;
+  flex-direction: column;
+  margin: 20px 0 0;
+}
+.new-git-conn .field-group label{
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+ul.git-providers{
+  display: flex;
+  justify-content: start;
+  margin: 0;
+}
+li.git-provider{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #ddd;
+  padding: 15px 52px;
+  border-right: none;
+  cursor: pointer; 
+}
+
+li.git-provider:last-child {
+  border: 1px solid #ddd;
+}
+li.git-provider:not(:first-child){
+  filter: saturate(0%);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+li.git-provider:hover, li.git-provider.selected{
+  background: #f5f5f5;
+}
+li.git-provider .svg-container{
+  height: 48px;
+}
+li.git-provider .svg-container svg{
+  width: 100%; height: 100%;
+}
+
+.git-provider .provider-name{
+  margin-top: 5px;
+}
+#fetching-repos{
+  font-size: 12px;
+}
+.vcyc .left-content{
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  max-width: 100%;
+}
+.connections-container {
+  display: flex;
+  flex-grow: 1;
+  flex-wrap: wrap;
+  justify-content: left;
+  
+  gap: 20px;
+}
+
+.connection-card {
+  display: flex;
+  flex-direction: column;
+  width: 250px;
+  padding: 20px 5px 10px 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  position: relative;
+  
+}
+
+dl.connection-info {
+  font-size: 14px;
+  color: #333;
+  margin: 0;
+  z-index: 2;
+}
+
+.connection-info dt, .connection-info dd {
+  display: inline-flex;
+  margin: 5px 0;
+}
+
+.connection-info dt {
+  font-weight: bold;
+  margin-right: 10px;
+  width: 35%; /* Adjust width as needed */
+  text-align: right;
+}
+
+.connection-info dd {
+  width: 60%; /* Adjust width as needed */
+  word-wrap: break-word;
+}
+.connection-info a{
+  padding-left: 5px;
+}
+.connection-info a span.dashicons{
+  color: #1f883d;
+  text-decoration: none;
+  font-size: 16px;
+}
+.connection-card.add-new{
+  font-size: 18px;
+  color:#1f883d;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 20px 12px;
+  min-height: 165px;
+}
+.connection-card .dashicons-insert{
+  font-size: 50px;
+  width: 50px;
+  height: 50px;
+  margin-bottom: 5px;
+}
+.connection-card.add-new:hover{
+  color:#1f883d;
+  box-shadow: 0 0 5px #d5cfcf;
+}
+.connection-card svg.card-bg{
+  width: 200px;
+  height: 200px;
+  position: absolute;
+  left: 37px;
+  top: 9px;
+  opacity: 0.05;
+  z-index: 1;
+}
+
+.delete-connection{
+  color: maroon;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.vcyc-msg{
+  padding: 10px; /* Padding for space inside the box */
+  border-radius: 5px; /* Rounded corners */
+  margin-top: 10px; /* Space above the error box */
+  font-size: 14px; /* Text size */
+  margin-bottom: 10px;
+  width: auto;  /* fallback */
+  width: fit-content;
+}
+.vcyc-msg.vcyc-error {
+  color: #a94442; /* Less intense maroon color */
+  background-color: #fdecea; /* Light red background color */
+  border: 1px solid #a94442; /* Border matching the text color */
+  
+}
+.vcyc-msg.vcyc-success {
+  color: #3c763d; /* Green color */
+  background-color: #dff0d8; /* Light green background color */
+  border: 1px solid #3c763d; /* Border matching the text color */
+}
+.vcyc-msg.vcyc-in-process {
+  color: #c59349; /* Orange color for in process tasks */
+  background-color: #fdf8ef; /* Light orange background color */
+  border: 1px solid #c59349; /* Border matching the text color */
+}
+
+
+.new-git-conn .dashicons-edit{
+  color: #2271b1;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.or-divider{
+  text-align: center;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 12px;
+  color: #999;
+}
+.vcyc .bmac-button{
+  display: flex;
+  justify-content: center;
+  width: 225px;
+  height: 60px;
+  cursor: pointer;
+  background: url(../img/default-yellow.png) no-repeat center center;
+  background-size: contain;
+}
