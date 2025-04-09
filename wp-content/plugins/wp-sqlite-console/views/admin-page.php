@@ -212,10 +212,6 @@ jQuery(document).ready(function($) {
     // Execute Query Button Click Handler
     $('#wpsqlc-execute-btn').on('click', function() {
         var query = editor.getValue();
-        if (!query.trim()) {
-            alert('Please enter a SQL query');
-            return;
-        }
 
         $(this).prop('disabled', true);
         $('#wpsqlc-results-message').html('<p>Executing query...</p>').show();
