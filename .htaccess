@@ -3,20 +3,15 @@
 # The directives (lines) between "BEGIN WordPress" and "END WordPress" are
 # dynamically generated, and should only be modified via WordPress filters.
 # Any changes to the directives between these markers will be overwritten.
+# BEGIN WordPress
 <IfModule mod_rewrite.c>
 RewriteEngine On
-
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-RewriteBase /wp-lite-base/
-
-# Allow direct access to migrate.php - placed before conditions
-RewriteCond %{REQUEST_URI} ^/wp-lite-base/migrate\.php$
-RewriteRule ^migrate\.php$ - [L,NC]
-
+RewriteBase /
 RewriteRule ^index\.php$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /wp-lite-base/index.php [L]
+RewriteRule . /index.php [L]
 </IfModule>
+# END WordPress
 
 # END WordPress
