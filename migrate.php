@@ -20,9 +20,12 @@ require_once('wp-blog-header.php');
 
 // Get current site URL from database
 $db = new SQLite3('wp-content/database/.ht.sqlite');
+$db->busyTimeout(5000); // Set timeout to 5 seconds
+$db->exec('PRAGMA journal_mode = WAL'); // Enable Write-Ahead Logging for better concurrency
 $current_url_query = "SELECT option_value FROM wp_options WHERE option_name = 'siteurl' LIMIT 1";
 $result = $db->query($current_url_query);
 $current_url = $result ? $result->fetchArray(SQLITE3_ASSOC)['option_value'] : '';
+$result->finalize(); // Free the result set
 
 // Get new URL from server environment
 $server_protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
@@ -202,13 +205,12 @@ $new_url = rtrim($server_protocol . $server_host . $server_path, '/');
 	}
 	
 	if(empty($errors)){
-	
-	/* -- Update Siteurl & Homeurl -- */
-	
-	$query1 = "UPDATE ".$prefix."options SET option_value = replace(option_value, '".$oldUrl."', '".$newUrl."') WHERE option_name = 'home' OR option_name = 'siteurl'";
-		
-	$db = new SQLite3('wp-content/database/.ht.sqlite');
-	$result1 = $db->query($query1);
+	try {
+		$db->exec('BEGIN TRANSACTION');
+
+		/* -- Update Siteurl & Homeurl -- */
+		$query1 = "UPDATE ".$prefix."options SET option_value = replace(option_value, '".$oldUrl."', '".$newUrl."') WHERE option_name = 'home' OR option_name = 'siteurl'";
+		$result1 = $db->query($query1);
 
     
 		
@@ -298,20 +300,20 @@ $new_url = rtrim($server_protocol . $server_host . $server_path, '/');
 	$message .= "<p class='success'>URL in Post Meta Table Successfully Updated!</p>";
 	
 	$message .= "<p class='success'><strong>Your WordPress Migration is Complete!</strong></p><p class='error'>Be sure to <strong>Delete</strong> the migrate.php file from your web server.</p>";
-	
+			}
+		}
+
+		$db->exec('COMMIT');
+	} catch (Exception $e) {
+		$db->exec('ROLLBACK');
+		$message = "<p class='error'>Error: " . $e->getMessage() . "</p>";
+	} finally {
+		$db->close(); // Close the database connection
 	}
-	
+	} else {
+		$message = $errors;
 	}
-	
-	
-	}else{
-	
-	$message = $errors;
-	
-	}
-	
-	
-	}
+}
 	
 	if(isset($message)){
 	
