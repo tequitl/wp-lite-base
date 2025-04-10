@@ -63,6 +63,13 @@ add_action('admin_menu', 'wp_music_player_admin_menu');
 function wp_music_player_enqueue_scripts() {
     // Admin scripts and styles
     if (is_admin()) {
+        wp_enqueue_style('wp-jquery-ui-dialog');
+        wp_enqueue_script('jquery-ui-core');
+        wp_enqueue_script('jquery-ui-widget');
+        wp_enqueue_script('jquery-ui-mouse');
+        wp_enqueue_script('jquery-ui-draggable');
+        wp_enqueue_script('jquery-ui-droppable');
+        wp_enqueue_script('jquery-ui-sortable');
         wp_enqueue_style('wp-music-player-admin', plugins_url('css/admin.css', __FILE__));
         wp_enqueue_media();
         wp_enqueue_script('wp-music-player-admin', plugins_url('js/admin.js', __FILE__), array('jquery', 'media-upload', 'thickbox'), '1.0.0', true);

@@ -77,10 +77,13 @@ function wp_music_player_admin_page() {
                     <button type="button" class="button button-primary add-to-playlist">Add to current playlist</button>
                     <button type="button" class="button button-primary save-playlist">Save</button>
                 </div>
+            
                 <div class="playlist">
                     <ul id="songs-container" class="playlist-songs">
                         <?php foreach ($songs as $index => $song): ?>
                             <li class="playlist-song" url="<?php echo esc_url($song['url']); ?>" title="<?php echo esc_html($song['title']); ?>">
+                                <span class="dashicons dashicons-arrow-up-alt"></span>
+                                <span class="dashicons dashicons-arrow-down-alt"></span>
                                 <span class="song-number"><?php echo esc_html($index + 1); ?></span>
                                 <span class="song-title"><?php echo esc_html($song['title']); ?></span>
                                 <button type="button" class="button button-link-delete remove-song"><span class="dashicons dashicons-trash"></span></button>

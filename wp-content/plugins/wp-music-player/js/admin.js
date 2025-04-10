@@ -3,7 +3,10 @@ jQuery(document).ready(function($) {
     let mediaUploader;
     let currentPlaylistId = null;
 
-
+    $('#songs-container').sortable({
+        items: 'li.playlist-song',
+        cursor: 'move',
+    });
     // Handle playlist selection
     $(document).on('click', '.playlist-item', function() {
         $('.playlist-item').removeClass('active');
@@ -43,9 +46,10 @@ jQuery(document).ready(function($) {
     $('.create-new-playlist').on('click', function() {
         const playlistName = prompt('Enter playlist name:');
         if (!playlistName) return;
-        
+        $('#playlist_id').val('');
         $('.playlist-name').val(playlistName);
         $('#list_editor').fadeIn(300);
+        $('#songs-container').empty();
     });
 
     $('#songs-container').on('click', '.remove-song', function() {
@@ -127,7 +131,9 @@ jQuery(document).ready(function($) {
         songs.forEach(function(song) {
             const songEntry = `
             <li class="playlist-song" url="${song.url}" title="${song.title}">
-                <span class="song-number">nil</span>
+                <span class="dashicons dashicons-arrow-up-alt"></span>
+                <span class="dashicons dashicons-arrow-down-alt"></span>
+                <span class="song-number">N/A</span>
                 <span class="song-title">${song.title}</span>
                 <button type="button" class="button button-link-delete remove-song"><span class="dashicons dashicons-trash"></span></button>
             </li>
