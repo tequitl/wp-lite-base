@@ -77,6 +77,10 @@ function wp_music_player_enqueue_scripts() {
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('wp_music_player_nonce')
         ));
+               // Frontend scripts and styles
+               wp_enqueue_style('wp-music-player', plugins_url('css/style.css', __FILE__), array('dashicons'));
+               wp_enqueue_script('wp-music-player', plugins_url('js/player.js', __FILE__), array('jquery'), '1.0.0', true);
+          
     } else {
         // Frontend scripts and styles
         wp_enqueue_style('wp-music-player', plugins_url('css/style.css', __FILE__), array('dashicons'));

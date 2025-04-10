@@ -30,13 +30,14 @@ function wp_music_player_admin_page() {
     ?>
     <div class="wrap">
         <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+        <?php if ($playlist_id==null):?>
         <div class="playlist-maker-container">
             <div class="playlist-maker-header">
                 <button type="button" class="button button-primary create-new-playlist">Add new playlist</button>
             </div>
-        </div>  
+        </div>
         <!-- Existing Playlists -->
-        <div class="card">
+        <div class="card" style="max-width:none; ">
             <h2>Existing Playlists</h2>
             <?php if ($playlists): ?>
                 <table class="wp-list-table widefat fixed striped">
@@ -66,33 +67,45 @@ function wp_music_player_admin_page() {
                 <p>No playlists created yet.</p>
             <?php endif; ?>
         </div>
+        <?php endif;?>
 
                 <!-- Playlist Maker -->
-        <div id="list_editor" class="card" style="display: <?php if( $playlist_id ==null) echo 'none'; else echo 'block'; ?>;">
+        <div id="list_editor" class="card" style="max-width:none; width: 100%; display: <?php if( $playlist_id ==null) echo 'none'; else echo 'block'; ?>;">
             <h2>Songs in Playlists</h2>
-            <div class="playlist-maker-container">
-                <div class="playlist-maker-header">
-                    <input type="hidden"  id="playlist_id" value="<?php if( $playlist_id !=null) echo $playlist_id; ?>">
-                    <input type="text" class="playlist-name" value="<?php if( $playlist_name !=null) echo $playlist_name; ?>"placeholder="Playlist name">
-                    <button type="button" class="button button-primary add-to-playlist">Add to current playlist</button>
-                    <button type="button" class="button button-primary save-playlist">Save</button>
-                </div>
+            <div class="playlist-maker-split" style="display: flex;">
+                <div class="playlist-maker-container" style="width: 50%;">
+                    <div class="playlist-maker-header">
+                        <input type="hidden"  id="playlist_id" value="<?php if( $playlist_id !=null) echo $playlist_id; ?>">
+                        <input type="text" class="playlist-name" value="<?php if( $playlist_name !=null) echo $playlist_name; ?>"placeholder="Playlist name">
+                        <button type="button" class="button button-primary add-to-playlist">Add to current playlist</button>
+                        <button type="button" class="button button-primary save-playlist">Save</button>
+                    </div>
             
-                <div class="playlist">
-                    <ul id="songs-container" class="playlist-songs">
-                        <?php foreach ($songs as $index => $song): ?>
-                            <li class="playlist-song" url="<?php echo esc_url($song['url']); ?>" title="<?php echo esc_html($song['title']); ?>">
-                                <span class="dashicons dashicons-arrow-up-alt"></span>
-                                <span class="dashicons dashicons-arrow-down-alt"></span>
-                                <span class="song-number"><?php echo esc_html($index + 1); ?></span>
-                                <span class="song-title"><?php echo esc_html($song['title']); ?></span>
-                                <button type="button" class="button button-link-delete remove-song"><span class="dashicons dashicons-trash"></span></button>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                 </div>
-            </div>  
+                    <div class="playlist">
+                        <ul id="songs-container" class="playlist-songs">
+                            <?php foreach ($songs as $index => $song): ?>
+                                <li class="playlist-song" url="<?php echo esc_url($song['url']); ?>" title="<?php echo esc_html($song['title']); ?>">
+                                    <span class="dashicons dashicons-arrow-up-alt"></span>
+                                    <span class="dashicons dashicons-arrow-down-alt"></span>
+                                    <span class="song-number"><?php echo esc_html($index + 1); ?></span>
+                                    <span class="song-title"><?php echo esc_html($song['title']); ?></span>
+                                    <button type="button" class="button button-link-delete remove-song"><span class="dashicons dashicons-trash"></span></button>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="playlist-preview" style="width: 50%; padding: 0 10px;">
+                    <h3>Playlist Preview</h3>
+                    <?php if ($playlist_id): ?>
+                        <?php echo do_shortcode('[music_player playlist_id="' . $playlist_id . '"]'); ?>
+                    <?php else: ?>
+                        <p>Select a playlist to preview</p>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
+
     </div>
     <?php
 }
