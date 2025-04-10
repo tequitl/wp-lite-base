@@ -61,7 +61,7 @@ jQuery(document).ready(function($) {
         }
         var playlist_id = $('#playlist_id').val();
         var action='wp_music_player_create_playlist_json';
-        if (playlist_id>0) {
+        if (playlist_id!='') {
             action='wp_music_player_update_playlist_json';
         }
         var songs = [];
