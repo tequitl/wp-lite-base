@@ -92,8 +92,8 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
-                    alert('Playlist saved successfully');
-                    //location.reload();
+                   // alert('Playlist saved successfully');
+                    location.reload();
                 } else {
                     alert('Failed to save playlist: ' + response.data);
                 }
@@ -103,7 +103,31 @@ jQuery(document).ready(function($) {
             }
         });
     });
-
+    // Function to delete playlist
+    $('.delete-playlist').on('click', function() {
+        const playlistId = $(this).attr('data-id');
+        if (!playlistId) {
+            alert('Please select a playlist to delete');
+            return;
+        }
+        const confirmation = confirm('Are you sure you want to delete this playlist?');
+        if (!confirmation) return;
+        $.ajax({
+            url: wpMusicPlayer.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'wp_music_player_delete_playlist',
+                playlist_id: playlistId,
+                nonce: wpMusicPlayer.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Playlist deleted successfully');
+                    location.reload();
+                }
+            }
+        });
+    });
     // Function to load playlist songs
     function loadPlaylistSongs(playlistId) {
         $.ajax({
