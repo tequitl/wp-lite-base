@@ -55,7 +55,7 @@ function wp_music_player_admin_page() {
                                 <td><code>[music_player playlist_id="<?php echo esc_attr($playlist->id); ?>"]</code></td>
                                 <td><?php echo esc_html($playlist->created_at); ?></td>
                                 <td>
-                                    <button class="button edit-playlist" data-id="<?php echo esc_attr($playlist->id); ?>">Edit</button>
+                                    <a href="<?php echo esc_url(admin_url('admin.php?page=wp-music-player&playlist_id=' . $playlist->id)); ?>" class="button edit-playlist">Edit</a>
                                     <button class="button button-link-delete delete-playlist" data-id="<?php echo esc_attr($playlist->id); ?>">Delete</button>
                                 </td>
                             </tr>
