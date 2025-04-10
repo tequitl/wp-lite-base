@@ -135,7 +135,7 @@ jQuery(document).ready(function($) {
 
             // Update song info
             if (songs[currentTrack]) {
-                player.find('.song-title').text(songs[currentTrack].title);
+                player.find('#song-title').text(songs[currentTrack].title);
             }
         }
 

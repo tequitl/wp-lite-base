@@ -16,6 +16,7 @@ function wp_music_player_admin_page() {
     $table_name = $wpdb->prefix . 'music_playlists';
     $playlists = $wpdb->get_results("SELECT * FROM $table_name ORDER BY created_at DESC");
     $playlist_id = null;
+    $playlist_name = null;
     $songs = [];
     if(isset($_GET['playlist_id'])){
         $playlist_id = intval($_GET['playlist_id']);
@@ -23,6 +24,7 @@ function wp_music_player_admin_page() {
             "SELECT * FROM $table_name WHERE id = %d",
             $playlist_id
         ));
+        $playlist_name = $playlist->name;
         $songs = json_decode($playlist->songs, true);
     }
     ?>
@@ -70,14 +72,15 @@ function wp_music_player_admin_page() {
             <h2>Songs in Playlists</h2>
             <div class="playlist-maker-container">
                 <div class="playlist-maker-header">
-                    <input type="text" class="playlist-name" placeholder="Playlist name">
+                    <input type="hidden"  id="playlist_id" value="<?php if( $playlist_id !=null) echo $playlist_id; ?>">
+                    <input type="text" class="playlist-name" value="<?php if( $playlist_name !=null) echo $playlist_name; ?>"placeholder="Playlist name">
                     <button type="button" class="button button-primary add-to-playlist">Add to current playlist</button>
-                    <button type="button" class="button button-primary create-playlist">Save</button>
+                    <button type="button" class="button button-primary save-playlist">Save</button>
                 </div>
                 <div class="playlist">
                     <ul id="songs-container" class="playlist-songs">
                         <?php foreach ($songs as $index => $song): ?>
-                            <li class="playlist-song" data-index="<?php echo esc_attr($index); ?>" data-url="<?php echo esc_url($song['url']); ?>">
+                            <li class="playlist-song" url="<?php echo esc_url($song['url']); ?>" title="<?php echo esc_html($song['title']); ?>">
                                 <span class="song-number"><?php echo esc_html($index + 1); ?></span>
                                 <span class="song-title"><?php echo esc_html($song['title']); ?></span>
                                 <button type="button" class="button button-link-delete remove-song"><span class="dashicons dashicons-trash"></span></button>

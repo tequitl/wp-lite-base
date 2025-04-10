@@ -54,29 +54,48 @@ jQuery(document).ready(function($) {
     });
     // Save playlist
     $('.save-playlist').on('click', function() {
-        const playlistName = $('.playlist-name').val();
+        var playlistName = $('.playlist-name').val();
         if (!playlistName) {
             alert('Please enter a playlist name');
             return;
         }
-
+        var playlist_id = $('#playlist_id').val();
+        var action='wp_music_player_create_playlist_json';
+        if (playlist_id>0) {
+            action='wp_music_player_update_playlist_json';
+        }
+        var songs = [];
+        $('.playlist-song').each(function() {
+            songs.push({
+                title: $(this).attr('title'),
+                url: $(this).attr('url')
+            });
+        });
+        
+        const playlistData = {
+            id: playlist_id,
+            name: playlistName,
+            songs: songs
+        };
+        console.log(JSON.stringify(playlistData));
         $.ajax({
             url: wpMusicPlayer.ajaxUrl,
             type: 'POST',
             data: {
-                action: 'wp_music_player_create_playlist',
-                playlist_name: playlistName,
+                action: action,
+                playlist_payload: JSON.stringify(playlistData),
                 nonce: wpMusicPlayer.nonce
             },
             success: function(response) {
                 if (response.success) {
-                    location.reload();
+                    alert('Playlist saved successfully');
+                    //location.reload();
                 } else {
-                    alert('Failed to create playlist: ' + response.data);
+                    alert('Failed to save playlist: ' + response.data);
                 }
             },
             error: function() {
-                alert('Failed to create playlist. Please try again.');
+                alert('Failed to save playlist. Please try again.');
             }
         });
     });
@@ -107,7 +126,7 @@ jQuery(document).ready(function($) {
         const container = $('#songs-container');
         songs.forEach(function(song) {
             const songEntry = `
-            <li class="playlist-song" data-url="${song.url}">
+            <li class="playlist-song" url="${song.url}" title="${song.title}">
                 <span class="song-number">nil</span>
                 <span class="song-title">${song.title}</span>
                 <button type="button" class="button button-link-delete remove-song"><span class="dashicons dashicons-trash"></span></button>

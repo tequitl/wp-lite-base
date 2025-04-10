@@ -23,7 +23,7 @@ $songs = json_decode($playlist->songs, true);
                 <i class="dashicons dashicons-format-audio"></i>
             </div>
             <div class="song-info">
-                <div class="song-title">Select a song</div>
+                <div id="song-title">Select a song</div>
                 <div class="playlist-title"><?php echo esc_html($playlist->name); ?></div>
             </div>
         </div>
@@ -71,9 +71,6 @@ $songs = json_decode($playlist->songs, true);
                     <span class="song-number"><?php echo esc_html($index + 1); ?></span>
                     <span class="song-title"><?php echo esc_html($song['title']); ?></span>
                     <span class="song-duration">-:--</span>
-                    <button class="remove-song" aria-label="Remove song" data-index="<?php echo esc_attr($index); ?>">
-                        <i class="dashicons dashicons-trash"></i>
-                    </button>
                 </li>
             <?php endforeach; ?>
         </ul>
