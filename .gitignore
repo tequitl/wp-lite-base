@@ -37,3 +37,4 @@ vendor/
 
 # Specific plugin to ignore
 wp-content/plugins/wp-sqlite-console/
+wp-content/plugins/wp-music-player/
