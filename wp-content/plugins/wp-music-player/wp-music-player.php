@@ -45,14 +45,25 @@ function wp_music_player_activate() {
  * Add menu item to the admin menu
  */
 function wp_music_player_admin_menu() {
+    $parent_slug = 'wp-music-player';
     add_menu_page(
         'Music Player', // Page title
         'Music Player', // Menu title
         'manage_options', // Capability required
-        'wp-music-player', // Menu slug
-        'wp_music_player_admin_page', // Callback function
+        $parent_slug, // Menu slug
+        'wp_music_player_preview_page', // Callback function
         'dashicons-playlist-audio', // Icon
         30 // Position
+    );
+
+    // Add submenu page
+    add_submenu_page(
+        $parent_slug, // Parent slug
+        'Add Playlists', // Page title
+        'Add Playlists', // Menu title
+        'manage_options', // Capability required
+        'wp-music-player-preview', // Menu slug
+        'wp_music_player_admin_page' // Callback function
     );
 }
 add_action('admin_menu', 'wp_music_player_admin_menu');
@@ -113,3 +124,4 @@ add_shortcode('music_player', 'wp_music_player_shortcode');
  */
 require_once plugin_dir_path(__FILE__) . 'includes/admin-page.php';
 require_once plugin_dir_path(__FILE__) . 'includes/ajax-handlers.php';
+require_once plugin_dir_path(__FILE__) . 'includes/add-playlist.php';

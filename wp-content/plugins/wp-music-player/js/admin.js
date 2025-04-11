@@ -2,11 +2,11 @@
 jQuery(document).ready(function($) {
     let mediaUploader;
     let currentPlaylistId = null;
-
+ 
     $('#songs-container').sortable({
         items: 'li.playlist-song',
         cursor: 'move',
-    });
+    });     
     // Handle playlist selection
     $(document).on('click', '.playlist-item', function() {
         $('.playlist-item').removeClass('active');

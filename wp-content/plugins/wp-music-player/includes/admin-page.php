@@ -95,6 +95,7 @@ function wp_music_player_admin_page() {
                         </ul>
                     </div>
                 </div>
+                <!-- Playlist Preview  crashes 
                  <div class="playlist-preview" style="width: 50%; padding: 0 10px;">
                     <h3>Playlist Preview</h3>
                     <?php if ($playlist_id): ?>
@@ -102,7 +103,7 @@ function wp_music_player_admin_page() {
                     <?php else: ?>
                         <p>Select a playlist to preview</p>
                     <?php endif; ?>
-                </div>
+                </div>-->
             </div>
         </div>
 
