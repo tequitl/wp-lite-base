@@ -58,6 +58,7 @@ jQuery(document).ready(function($) {
     });
     // Save playlist
     $('.save-playlist').on('click', function() {
+        $('#preview-playlist').remove();
         var playlistName = $('.playlist-name').val();
         if (!playlistName) {
             alert('Please enter a playlist name');

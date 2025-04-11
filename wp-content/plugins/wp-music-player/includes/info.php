@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 /**
  * Render the preview page content
  */
-function wp_music_player_preview_page() {
+function wp_music_player_info() {
     // Check user capabilities
     if (!current_user_can('manage_options')) {
         return;
