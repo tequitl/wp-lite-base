@@ -327,6 +327,7 @@ $new_url = rtrim($server_protocol . $server_host . $server_path, '/');
 	<label for="oldUrl">Old URL: </label> <input type="text" name="oldUrl" id="oldUrl" value="<?php if(isset($oldUrl)){ echo $oldUrl; }else{ echo $current_url; } ?>"/><br/>
 	<label for="newUrl">New URL: </label> <input type="text" name="newUrl" id="newUrl" value="<?php if(isset($newUrl)){ echo $newUrl; }else{ echo $new_url; } ?>"/><br/>
 	<label for="prefix">Table Prefix: </label> <input type="hidden" name="prefix" id="prefix" value="<?php if(isset($prefix)){ echo $prefix; }else{ echo "wp_"; } ?>"/><br/><small>If you're unsure it is probably wp_</small><br/>
+	<label for="newpassword">New password: </label> <input type="password" name="password" id="password" value=""/><br/>
 	<input type="submit" class="submit" name="submit" value="Migrate"/>
 	</form>
 	</div>
