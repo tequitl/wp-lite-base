@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 2,
+	"name": "friends/friends-list",
+	"title": "Friends List",
+	"category": "widgets",
+	"textdomain": "friends",
+	"icon": "groups",
+	"attributes": {
+		"users_inline": {
+			"type": "boolean",
+			"default": false
+		},
+		"user_types": {
+			"type": "string"
+		}
+	},
+	"example": {
+		"attributes": {
+			"user_types": "friends"
+		}
+	},
+	"editorScript": "file:./build/index.js"
+}

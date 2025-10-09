@@ -1,0 +1,308 @@
+.friends-notice b.headline {
+	font-size: 110%;
+}
+
+.friends-header {
+	text-align: center;
+	margin: 0 0 1rem;
+	background: #fff;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.friends-title-section {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	clear: both;
+	padding-top: 8px;
+}
+
+.friends-tabs-wrapper {
+	display: inline-grid;
+	grid-auto-flow: column;
+}
+
+.friends-tab {
+	text-decoration: none;
+	color: inherit;
+	padding: 0.5rem 1rem 1rem;
+	margin: 0 1rem;
+	transition: box-shadow 0.5s ease-in-out;
+}
+
+.friends-tab:focus {
+	color: #1d2327;
+	outline: 1px solid #787c82;
+	box-shadow: none;
+}
+
+.friends-tab.active {
+	box-shadow: inset 0 -3px #3582c4;
+	font-weight: 600;
+}
+
+.friends-body {
+	max-width: 800px;
+	margin: 0 auto;
+}
+
+.friends-body.edit-friend-feeds {
+	max-width: 90%;
+}
+
+.friends-body.friends p {
+	margin-bottom: 1.5em;
+}
+
+.friends-body.friends ul {
+	margin-left: 1em;
+}
+
+.friends-body.friends ul li {
+	list-style: disc;
+	margin-bottom: 1em;
+}
+
+.friends-body.friends ul li ul li {
+	list-style: circle;
+	margin-top: 1em;
+}
+
+.friends-body summary {
+	cursor: pointer;
+}
+
+.friends-notice b.headline:before,
+#friends-welcome-panel h2:before {
+	content: "\f307";
+	color: #82878c;
+	font-family: dashicons;
+	speak: none;
+	display: inline-block;
+	padding: 0 5px 0 0;
+	position: relative;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-decoration: none !important;
+	vertical-align: top;
+}
+
+#dashboard_right_now li a.friends:before {
+	content: "\f307";
+	padding: 0 5px 0 0;
+}
+
+#dashboard_right_now li a.friend-requests:before {
+	content: "\f336";
+	padding: 0 5px 0 0;
+}
+
+#dashboard_right_now li a.subscriptions:before {
+	content: "\f123";
+	padding: 0 5px 0 0;
+}
+
+#dashboard_right_now li a.friend-posts:before {
+	content: "\f105";
+	padding: 0 5px 0 0;
+}
+
+tr .row-actions span.friends {
+	display: none;
+}
+
+tr:hover .row-actions span.friends {
+	display: inline;
+}
+
+ul.feeds li.inactive summary {
+	text-decoration: line-through;
+}
+
+ul.feeds li.active table {
+	border-left: 2px green solid;
+}
+
+ul.feeds li.inactive table {
+	border-left: 2px red solid;
+}
+
+ul.feeds li th {
+	padding-left: 1em;
+}
+
+table.reader-table .check-column {
+	width: 5em;
+	vertical-align: top;
+	text-align: center;
+}
+
+table.feed-table.widefat td,
+table.feed-table.widefat th {
+	padding: .5em;
+}
+
+table.feed-table.widefat th,
+table.feed-table.widefat th.check-column {
+	vertical-align: bottom;
+}
+
+table.feed-table.widefat td.nowrap,
+table.feed-table.widefat th.nowrap {
+	white-space: nowrap;
+}
+
+#available-widgets [class*="friends-widget"] .widget-title:before {
+	content: "\f307";
+}
+
+a.friends-auth-link span.dashicons,
+button.friends-auth-link span.dashicons {
+	color: #32c170;
+	margin-left: 6px;
+}
+
+a.explanation-friends-auth-link:hover,
+a.friends-auth-link :hover,
+a.friends-auth-link:hover span.dashicons,
+button.friends-auth-link:hover span.dashicons {
+	color: #32c170;
+}
+
+p.lastlog {
+	padding: .8em 1em;
+	margin-bottom: 2em;
+}
+
+.friends-plugin-installer .plugin-card .desc,
+.friends-plugin-installer .plugin-card .name {
+	margin: auto;
+}
+
+h4.unfriend .avatar {
+	vertical-align: middle;
+}
+
+div.button.unfriend {
+	float: right;
+	border-color: #b00;
+}
+
+.button.button-destructive {
+	border-color: #b00;
+	color: #a00;
+	text-decoration: none;
+}
+
+div.button.unfriend:hover {
+	border-color: #a00;
+}
+
+a.unfriend:any-link {
+	color: #a00;
+	text-decoration: none;
+}
+
+span.disabled {
+	color: #999;
+}
+
+span#friends_enable_retention_days_line,
+span#friends_enable_retention_number_line {
+	cursor: pointer;
+}
+
+#friends-reaction-picker {
+	margin-top: 1em;
+	border: 1px solid #999999;
+	box-shadow: 2px 2px 5px #cccccc;
+	border-radius: .25em;
+	background-color: #fff;
+	padding: 1em;
+	max-width: 50%;
+	max-height: 20%;
+	overflow: auto;
+}
+
+#friends-reaction-picker button {
+	padding: .2em;
+	margin: 0;
+	font-size: 18px;
+	background-color: #fff;
+	border: 0;
+	cursor: pointer;
+	z-index: 999999;
+}
+
+#friends-reaction-picker button:focus {
+	outline: none;
+}
+
+#available-emojis-template {
+	display: none;
+}
+
+#wpadminbar li#wp-admin-bar-friends {
+	display: block;
+}
+
+@keyframes loading {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.friends-loading {
+	color: rgba(0, 0, 0, 0) !important;
+	min-height: .8rem;
+	pointer-events: none;
+	position: relative;
+	margin-left: 1em;
+}
+
+.friends-loading::after {
+	animation: loading 500ms infinite linear;
+	background: rgba(0, 0, 0, 0);
+	border: .1rem solid #2e5bec;
+	border-radius: 50%;
+	border-right-color: rgba(0, 0, 0, 0);
+	border-top-color: rgba(0, 0, 0, 0);
+	content: "";
+	display: block;
+	height: .8rem;
+	left: 50%;
+	margin-left: -0.4rem;
+	margin-top: -0.4rem;
+	opacity: 1;
+	padding: 0;
+	position: absolute;
+	top: 50%;
+	width: .8rem;
+	z-index: 1;
+}
+
+#friends-dashboard-widget .author-avatar {
+	vertical-align: middle;
+}
+
+.friends-notification-manager details.options {
+	margin-top: 1em;
+}
+.friends-notification-manager details.options fieldset {
+	margin-top: 1em;
+	margin-bottom: 1em;
+	display: flex;
+	flex-wrap: wrap;
+}
+.friends-notification-manager details.options fieldset label {
+	width: 10em;
+}
+
+.friends-logs pre {
+	width: 38em;
+	white-space: pre-wrap;
+}

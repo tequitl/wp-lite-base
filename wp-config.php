@@ -20,6 +20,10 @@
 
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
+/* Add any custom values between this line and the "stop editing" line. */
+
+// Force HTTPS for WordPress
+/* That's all, stop editing! Happy publishing. */
 define('FS_METHOD', 'direct');
 define( 'DB_NAME', 'wordpress' );
 
@@ -90,7 +94,19 @@ define( 'WP_DEBUG', false );
 
 /* Add any custom values between this line and the "stop editing" line. */
 
-
+// Set the correct site URLs for local development
+if (strpos($_SERVER['HTTP_HOST'], 'ngrok.app') !== false) {
+    // ngrok environment
+    define('WP_HOME','https://' . $_SERVER['HTTP_HOST'] );
+    define('WP_SITEURL','https://' . $_SERVER['HTTP_HOST'] );
+    define('FORCE_SSL_ADMIN', true);
+    $_SERVER['HTTPS'] = 'on';
+} else {
+    // Local environment
+    define('WP_HOME','http://localhost/');
+    define('WP_SITEURL','http://localhost/');
+	define('FORCE_SSL_ADMIN', false);
+}
 
 /* That's all, stop editing! Happy publishing. */
 
