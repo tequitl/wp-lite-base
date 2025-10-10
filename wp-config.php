@@ -95,7 +95,7 @@ define( 'WP_DEBUG', false );
 /* Add any custom values between this line and the "stop editing" line. */
 
 // Set the correct site URLs for local development
-if (strpos($_SERVER['HTTP_HOST'], 'ngrok.app') !== false) {
+if (strpos($_SERVER['HTTP_HOST'], 'ngrok') !== false) {
     // ngrok environment
     define('WP_HOME','https://' . $_SERVER['HTTP_HOST']."/" );
     define('WP_SITEURL','https://' . $_SERVER['HTTP_HOST']."/");
