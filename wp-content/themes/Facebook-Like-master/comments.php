@@ -31,7 +31,40 @@
 <fieldset id="comments">
 <legend><?php printf( _n( 'One Comment', '%1$s Comments', get_comments_number(), 'twentyten' ), number_format_i18n( get_comments_number() ), '<em>' . get_the_title() . '</em>' );?></legend>
 <ol class="commentlist">
-<?php wp_list_comments( array( 'callback' => 'twentyten_comment' ) ); ?>
+<?php 
+// Alternative approach using get_comments() instead of wp_list_comments()
+$comments = get_comments(array(
+    'post_id' => get_the_ID(),
+    'status' => 'approve',
+    'order' => 'ASC'
+));
+
+if ($comments) {
+    foreach ($comments as $comment) {
+        ?>
+        <li>
+            <?php if(get_comment_author_url($comment->comment_ID)){?>
+            <a href="<?php echo get_comment_author_url($comment->comment_ID);?>"><?php echo get_avatar( $comment, 32 ); ?></a>
+            <?php } else { echo get_avatar( $comment, 32 );} ?>
+            <div class="comment">
+                <div class="info">
+                    <?php printf( __( '%s', 'twentyten' ), sprintf( '<cite class="fn">%s</cite>', get_comment_author_link($comment->comment_ID) ) ); ?>
+                    <small><?php echo human_time_diff(strtotime($comment->comment_date), current_time('timestamp')) . ' ago'; ?></small>
+                    <?php if ( $comment->comment_approved == '0' ) : ?>
+                    (<em><?php _e( 'Your comment is awaiting moderation.', 'twentyten' ); ?></em>)
+                    <?php endif; ?>
+                </div>
+                <div class="text">
+                    <?php echo wpautop($comment->comment_content); ?>
+                </div>
+            </div>
+        </li>
+        <?php
+    }
+} else {
+    echo '<li><em>No comments yet.</em></li>';
+}
+?>
 </ol>
 </fieldset>
 <?php if ( get_comment_pages_count() > 1 && get_option( 'page_comments' ) ) : // Are there comments to navigate through? ?>
@@ -55,11 +88,11 @@
 <fieldset id="comments">
 <?php if ('open' == $post->comment_status) : ?>
 <legend>Leave a comment</legend>
-<?php if ( get_option('comment_registration') && !get_current_user_id() ) : ?>
-<p>You must be <a href="<?php echo get_option('siteurl'); ?>/wp-login.php?redirect_to=<?php echo urlencode(get_permalink()); ?>">logged in</a> to post a comment.</p>
+<?php if ( get_option('comment_registration') && !is_user_logged_in() ) : ?>
+<p>You must be <a href="<?php echo wp_login_url( get_permalink() ); ?>">logged in</a> to post a comment.</p>
 <?php else : ?>
-<form action="<?php echo get_option('siteurl'); ?>/wp-comments-post.php" method="post" id="commentform">
-<?php if ( get_current_user_id() ) : ?>
+<form action="<?php echo site_url( '/wp-comments-post.php' ); ?>" method="post" id="commentform">
+<?php if ( is_user_logged_in() ) : ?>
 <table cellpadding="0" cellspacing="8" >
 <?php else : ?>
 <table cellpadding="0" cellspacing="8" >
