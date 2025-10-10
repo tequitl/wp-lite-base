@@ -41,7 +41,7 @@
 		#qm0 div, #qm0 ul{padding:0px; margin-left:-94px;padding:5px 0px 5px 0px ;	background:#FFF;border:none;min-width:150px;border:1px solid #000;	border-top:none;	}
 
 		/*"""""""" (SUB) Items""""""""*/	
-		#qm0 div a, #qm0 ul a{min-width:150px;padding:5px 10px 5px 15px ;color:#3B5998;font-size:11px;margin:0px;border:none;font-weight:normal;}
+		#qm0 div a, #qm0 ul a{min-width:150px;padding:5px 10px 5px 15px ;color:#8e8f90;font-size:11px;margin:0px;border:none;font-weight:normal;}
 		#qm0 div a:hover	{background-color:#6D84B4;	text-decoration:none;	color:#fff;}
 		#qm0 ul li:hover>a	{text-decoration:none;	}
 

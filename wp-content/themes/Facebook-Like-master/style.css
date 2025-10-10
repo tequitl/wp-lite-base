@@ -1,11 +1,11 @@
 /*
-	Theme Name: Facebook
+	Theme Name: Facebook Gray
 	URI: http://linesh.com/
-	Description:  Feature-packed theme with a solid design, built-in widgets and a intuitive theme settings interface... Designed by <a href="http://linesh.com/">Linesh Jose</a>.
+	Description:  Feature-packed theme with a solid design, built-in widgets and a intuitive theme settings interface... Designed by <a href="http://linesh.com/">Linesh Jose</a>. Gray color scheme version.
 	Version: 15.05
 	Author: Linesh Jose 
 	Author URI: http://linesh.com
-	roTags: light, white,two-columns, three-columns, fixed-width, flexible-width, right-sidebar, left-sidebar, theme-options, threaded-comments, translation-ready, custom-header	
+	roTags: light, gray, two-columns, three-columns, fixed-width, flexible-width, right-sidebar, left-sidebar, theme-options, threaded-comments, translation-ready, custom-header	
 	Both the design and code are released under GPL. Http://www.opensource.org/licenses/gpl-license.php
 */
 	
@@ -67,7 +67,7 @@ big {
 	font-size: 131.25%;
 }
 ins {
-	background: #ffc;
+	background: #e6e6e6;
 	text-decoration: none;
 }
 pre {
@@ -95,13 +95,13 @@ sub {
 	top: .5ex;
 }
 abbr {
-	border-bottom: 1px dashed #006600;
+	border-bottom: 1px dashed #666;
 }
 blockquote {
 	margin: 10px;
 	padding: 6px;
-	border-left: 2px solid #D8DFEA;
-	background: #EFF2F7;
+	border-left: 2px solid #ccc;
+	background: #f5f5f5;
 	line-height: 20px;
 	font-family: Courier, monospace;
 }
@@ -124,7 +124,7 @@ hr {
 }
 a {
 	text-decoration: none;
-	color: #3B5998;
+	color: #555;
 	font-family: 'Lucida Grande', Tahoma, Verdana, Arial, sans-serif;
 	font-size: 12px;
 }
@@ -159,8 +159,8 @@ ul, ol, dl {
 	text-align: center;
 }
 .warn {
-	background: #FBFCB1;
-	border: 1px solid #C6BB05;
+	background: #e6e6e6;
+	border: 1px solid #999;
 	padding: 10px;
 }
 /* button*/
@@ -182,8 +182,8 @@ input[type=button], input[type=reset], .button {
 	box-shadow: rgba(0, 0, 0, 0.0976563) 0px 1px 0px;
 }
 input[type=submit] {
-	background: #617AAC url('./images/button.png') repeat-x 100% -47px;
-	border: 1px solid #29447E;
+	background: #777 url('./images/button.png') repeat-x 100% -47px;
+	border: 1px solid #555;
 	color: #fff;
 }
 input[type=submit]:hover, input[type=button]:hover, input[type=reset]:hover, .button:hover {
@@ -218,7 +218,7 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 	padding: 3px 8px 3px 8px;
 }
 .logo a:hover {
-	background: #6D86B7;
+	background: #888;
 }
 #leftbar .userinfo img {
 	width: 50px;
@@ -251,7 +251,7 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 	margin-bottom: 1px;
 }
 #leftbar .site_menu .current_page_item ul li a:hover, #leftbar .site_menu li a:hover {
-	background: #EFF2F7;
+	background: #f5f5f5;
 }
 #leftbar .site_menu li ul {
 	margin: 0;
@@ -262,7 +262,7 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 }
 #leftbar .site_menu .current_page_item a {
 	font-weight: bold;
-	background: #D8DFEA;
+	background: #ddd;
 }
 #leftbar .site_menu .current_page_item ul li a {
 	background: none;
@@ -313,7 +313,7 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 	padding: 2px 0px 2px 0px;
 }
 #leftbar .widget ul li ul li a, #sidebar .widget ul li ul li a {
-	color: green;
+	color: #666;
 	background: url(images/bullet_1.gif) 0px 5px no-repeat;
 	padding-left: 6px;
 }
@@ -354,18 +354,26 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 	margin: 0;
 }
 #rightbar .top {
-	background: #627AAD;
-	border: 1px solid #1D4088;
+	background: linear-gradient(to bottom, #777 0%, #555 100%);
+	border: 1px solid #555;
 	height: 30px;
 	border-bottom: none;
 	margin-top: 10px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.13);
 }
+
 #rightbar .top .search {
 	float: left;
 	margin: 4px 0 4px 4px;
-	border: 1px solid #1D4088;
+	border: 1px solid #555;
 	padding: 1px;
 	background: #fff;
+	border-radius: 3px;
+}
+
+/* Optional: Style the menu items to match gray theme */
+#rightbar .top .menu {
+	/* Add any menu styling here to match gray theme */
 }
 #rightbar .top .search .searchtextbox {
 	padding: 0;
@@ -598,7 +606,7 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 	color: #000;
 	margin: 0;
 	padding: 0;
-	background: #EFF2F7;
+	background: #f5f5f5;
 	font-family: Courier, monospace;
 }
 #posts .post_data a {
@@ -626,14 +634,14 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 #posts .tags {
 	text-align: left;
 	padding: 6px;
-	background: #EDEFF4;
+	background: #f0f0f0;
 	color: #ccc;
 }
 #posts .tags b {
 	color: #555;
 }
 #navigation {
-	background: #EDEFF4;
+	background: #f0f0f0;
 	margin: 0;
 	padding: 0;
 	margin: 10px 0 10px 0;
@@ -672,12 +680,12 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 	font-size: 13px;
 	padding: 5px;
 	font-weight: bold;
-	border-bottom: 1px solid #E5EAF1;
-	background: #EDEFF4;
+	border-bottom: 1px solid #ddd;
+	background: #f0f0f0;
 	width: 530px;
 }
 #comments .nocomments {
-	color: red;
+	color: #888;
 }
 #comments .commentlist {
 	text-align: left;
@@ -688,8 +696,8 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 #comments .commentlist li {
 	margin-bottom: 2px;
 	padding: 6px;
-	background: #EDEFF4;
-	border-bottom: 1px solid #E5EAF1;
+	background: #f0f0f0;
+	border-bottom: 1px solid #ddd;
 }
 #comments .commentlist li img {
 	float: left;
@@ -727,7 +735,7 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 	color: #000;
 }
 #comments table {
-	background: #EDEFF4;
+	background: #f0f0f0;
 	font-size: 11px;
 }
 #comments td {
@@ -736,15 +744,15 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 #comments .textbox {
 	width: 155px;
 	margin-right: 8px;
-	border: 1px solid #BDC7D8;
+	border: 1px solid #ccc;
 }
 #comments textarea {
 	height: 50px;
-	border: 1px solid #BDC7D8;
+	border: 1px solid #ccc;
 	width: 514px;
 }
 #comments span {
-	color: red;
+	color: #888;
 }
 #comments small {
 	font-size: 10px;
