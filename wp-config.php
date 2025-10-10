@@ -97,8 +97,8 @@ define( 'WP_DEBUG', false );
 // Set the correct site URLs for local development
 if (strpos($_SERVER['HTTP_HOST'], 'ngrok.app') !== false) {
     // ngrok environment
-    define('WP_HOME','https://' . $_SERVER['HTTP_HOST'] );
-    define('WP_SITEURL','https://' . $_SERVER['HTTP_HOST'] );
+    define('WP_HOME','https://' . $_SERVER['HTTP_HOST']."/" );
+    define('WP_SITEURL','https://' . $_SERVER['HTTP_HOST']."/");
     define('FORCE_SSL_ADMIN', true);
     $_SERVER['HTTPS'] = 'on';
 } else {
