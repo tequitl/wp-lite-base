@@ -1,88 +1,57 @@
-# 🌐 Rebuilding the Independent Web: WordPress + SQLite
+# 🌐 Rebuilding the Independent Web: WordPress + SQLite + ClassicSocialMedia + Friends
+
 ## 🏠 A Return to Self-Hosted Freedom
+There was a time when the web felt more personal—more human. Before algorithmic feeds and centralized platforms, self-hosted sites and forums fostered genuine connection and creativity.
 
-> 💭 "There was a time when the web felt more personal—more human."
+This project brings that spirit back with a lightweight, portable stack:
+- WordPress (the familiar publishing engine)
+- SQLite (a single-file database, no MySQL server required)
+- ClassicSocialMedia theme (forked from the Facebook-Like theme by Linesh Jose)
+- Friends plugin by Alex Kirk (follow, read, and interact with your social web—on your own site)
 
-🌟 Before the age of monolithic platforms, algorithmic feeds, and one-size-fits-all solutions, the Bulletin Board System (BBS) thrived as a grassroots network of self-hosted communities. Sysops curated their own spaces, users connected directly, and creativity wasn't bound by corporate policies or opaque algorithms.
+## 🚀 Why WordPress + SQLite?
+- Lightweight & portable: Perfect for local experimentation, small VPS, or Raspberry Pi
+- Own your data: Everything lives in a single SQLite file you control
+- Minimal setup: No external database server to manage
+- Fast to iterate: Spin up, customize, and share quickly
 
-⚡ Today, convenience has come at a cost: dependence on large tech providers, bloated infrastructure, and a loss of that hands-on, independent spirit. But what if we could recapture the essence of the BBS—not to reject modern tools, but to rebalance the web toward self-reliance and simplicity?
+## 🎨 ClassicSocialMedia Theme
+ClassicSocialMedia is a fork inspired by the Facebook-Like theme’s clean, social-style layout.
+- Origin: https://github.com/lineshjose/Facebook-Like
+- Goals: Simplicity, readability, customizable and social-friendly presentation
+- Notes: Updated for modern WordPress functions and compatibility
 
-## 🚀 WordPress + SQLite: A Modern Take on the BBS Ethos
+## 🤝 Friends Plugin
+Friends adds a social reader to WordPress—subscribe to friends’ sites and interact from your own blog:
+- Plugin page: https://wordpress.org/plugins/friends/
+- Highlights:
+  - Follow blogs via RSS; integrate with ActivityPub to follow Mastodon and other federated platforms
+  - Read posts in one place, categorize by post format
+  - Interact while preserving your autonomy—no third-party platform lock-in
+  - Uses standard WordPress capabilities and data structures
 
-### ✨ Key Features
+## 🔧 Quick Start
+1. Install WordPress (this repository uses the SQLite integration, so no MySQL needed).
+2. Activate the SQLite Database Integration plugin (bundled in wp-content/plugins).
+3. Activate the ClassicSocialMedia theme in Appearance → Themes.
+4. Install and activate the Friends plugin (Plugins → Add New → “Friends”).
+5. Start publishing and optionally add friends to follow their content.
 
-🎯 **Lightweight & Portable**
-- SQLite eliminates complex database servers
-- Self-host on anything from a Raspberry Pi to a VPS
-- Quick setup, minimal requirements
+## 🧭 Tips
+- Keep it minimal: fewer plugins means faster, simpler, more reliable.
+- Use HTTPS for public sites (via a reverse proxy or tunneling if needed).
+- To share locally, try Cloudflare Tunnel, ngrok, LocalTunnel, or Pagekite.
+- Regularly back up your SQLite database file (wp-content/database/ or your configured path).
 
-🔒 **Own Your Data**
-- No vendor lock-in
-- No mandatory cloud services
-- Your content, stored in a single file you control
+## 🔒 Security Considerations
+- Harden WordPress (strong passwords, limited logins, updates)
+- Use modern functions and avoid deprecated globals
+- Review plugin settings to match your privacy and sharing goals
 
-🤝 **Community-First**
-- Forums, file repositories, blogs
-- No reliance on external platforms
-- Direct connection with your audience
+## 🙌 Credits
+- ClassicSocialMedia theme is a fork of: https://github.com/lineshjose/Facebook-Like
+- Friends plugin by Alex Kirk: https://wordpress.org/plugins/friends/
+- WordPress + SQLite integration: thank you to the maintainers enabling database portability
 
-🎨 **A Nod to the Past, Built for Today**
-- Retro-inspired themes
-- Modern web standards
-- Perfect blend of nostalgia and functionality
-
-## 💫 Why This Matters
-
-The beauty of the early web was its diversity—small sites, quirky forums, and niche communities that existed outside the walled gardens. While today's platforms offer undeniable convenience, they also centralize control. WordPress + SQLite is a step back toward a more independent web, where individuals and small groups can run their own spaces without unnecessary complexity.
-
-## 🚀 Want to Try It?
-
-1. 📥 Install WordPress with the SQLite Integration plugin
-2. 🎯 Keep it simple—avoid unnecessary plugins and trackers
-3. 🌐 Share your site the old-school way: through direct links and communities
-
-The spirit of the BBS lives on—not in opposition to modern tech, but as a reminder that the web can still be personal, independent, and truly yours. 💻✨
-
-## 🌍 Exposing Your Local Site to the World
-
-### 🔗 Using Tunneling Services
-
-1. **Ngrok (Free & Paid Plans)**
-   - Install ngrok from ngrok.com
-   - Run `ngrok http 80` to expose your localhost
-   - Get a public URL like `https://your-subdomain.ngrok.io`
-   - Free plan: temporary URLs, limited connections
-   - Pro plan: custom domains, more features
-
-2. **Alternatives**
-   - Cloudflare Tunnel (generous free tier)
-   - Localtunnel (open source)
-   - Pagekite (pay-what-you-want model)
-
-### 🛡️ Security Considerations
-
-- Use HTTPS whenever possible
-- Set up WordPress security plugins
-- Limit access with authentication
-- Keep your tunneling credentials secure
-
-### 💰 Cost-Effective Production Hosting
-
-1. **Self-Hosted Options**
-   - Home server + Dynamic DNS
-   - Raspberry Pi + Port forwarding
-   - Low-cost VPS ($5/month)
-
-2. **Managed Solutions**
-   - NearlyFreeSpeech.NET (pay-as-you-go)
-   - Small VPS providers
-   - Shared hosting with SQLite support
-
-## 📚 Further Reading
-
-- 🌱 <a href="https://kickscondor.com/" target="_blank">The Small Web movement (Kicks Condor)</a>
-- 💎 <a href="https://www.nearlyfreespeech.net/" target="_blank">Minimalist WordPress hosting (NearlyFreeSpeech.NET)</a>
-- 🎨 <a href="https://brutalistwebsites.com/" target="_blank">Retro web design inspirations</a>
-- 🔒 <a href="https://wordpress.org/support/article/hardening-wordpress/" target="_blank">Web security best practices</a>
-
-#IndieWeb #SelfHosting #WordPress #SQLite #BBSRevival 🌟
+## 📜 License
+This project builds on open-source software. Refer to each component’s respective license for details.
