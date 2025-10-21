@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WP‑NET — Terminal Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000000;
+      --fg: #e6e6e6;
+      --muted: #bdbdbd;
+      --grid: #111111;
+      --line: #ffffff;
+      --border: #e6e6e6;
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Share Tech Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      overflow: hidden;
+    }
+    /* Canvas behind UI */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+    /* Subtle CRT scanlines overlay */
+    .scanlines:before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(transparent 0px, rgba(255,255,255,0.02) 2px, transparent 4px);
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* Centered layout */
+    .form-container {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+    /* Terminal-style panel */
+    .login-card {
+      width: min(420px, 92vw);
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.05), 0 0 18px rgba(255,255,255,0.08);
+      padding: 1.6rem;
+    }
+    .title {
+      margin: 0 0 0.4rem 0;
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      color: var(--line);
+    }
+    .title .caret {
+      display: inline-block;
+      width: 0.6rem;
+      height: 1.2rem;
+      background: var(--line);
+      animation: blink 1s steps(1, end) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+    .subtitle {
+      margin: 0 0 1.2rem 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .field {
+      display: grid;
+      gap: 0.4rem;
+      margin-bottom: 0.9rem;
+    }
+    label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+    input[type="text"], input[type="password"] {
+      background: #000;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.7rem 0.9rem;
+      outline: none;
+      transition: box-shadow 140ms ease, border-color 140ms ease, transform 140ms ease;
+    }
+    input[type="text"]::placeholder, input[type="password"]::placeholder {
+      color: #9a9a9a;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+      border-color: #fff;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.12);
+      transform: translateZ(0) scale(1.01);
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.8rem;
+    }
+    .remember {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    button.login {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #000;
+      color: var(--fg);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.75rem 1.1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease, color 140ms ease, background 140ms ease;
+    }
+    button.login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+      background: #fff;
+      color: #000;
+    }
+    .links {
+      display: grid;
+      gap: 0.4rem;
+      margin-top: 1rem;
+    }
+    .links a {
+      color: var(--fg);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+</head>
+<body class="scanlines">
+  <div id="canvas-container" aria-hidden="true"></div>
+
+  <main class="form-container">
+    <section class="login-card" role="form" aria-describedby="login-desc">
+      <h1 class="title">
+        WP‑NET Terminal <span class="caret" aria-hidden="true"></span>
+      </h1>
+      <p id="login-desc" class="subtitle">Monochrome network — minimal distraction, maximum focus.</p>
+
+      <form action="/wp-login.php" method="post">
+        <div class="field">
+          <label for="user_login">Username</label>
+          <input id="user_login" name="log" type="text" autocomplete="username" placeholder="user" required />
+        </div>
+        <div class="field">
+          <label for="user_pass">Password</label>
+          <input id="user_pass" name="pwd" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        </div>
+
+        <div class="actions">
+          <label class="remember">
+            <input type="checkbox" name="rememberme" value="forever" />
+            Remember me
+          </label>
+          <button class="login" type="submit">Login</button>
+        </div>
+
+        <input type="hidden" name="redirect_to" value="/" />
+      </form>
+
+      <div class="links">
+        <a href="/wp-login.php?action=lostpassword">Forgot password?</a>
+        <a href="/wp-login.php?action=register">Create account</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // p5.js instance-mode: monochrome network + subtle grid
+    (function () {
+      new p5(function (p) {
+        let nodes = [];
+        let linkThreshold;
+        let baseCount;
+
+        // Grid parameters (monochrome)
+        const gridSpacing = 40;
+        const gridTilt = Math.PI / 12;
+        const gridAlpha = 22; // light lines
+
+        const mouseInfluence = 140;
+
+        function computeDensity() {
+          const area = p.windowWidth * p.windowHeight;
+          baseCount = p.constrain(Math.floor(area * 0.00008), 140, 520);
+          linkThreshold = p.constrain(Math.min(p.windowWidth, p.windowHeight) * 0.18, 100, 240);
+        }
+
+        function initNodes() {
+          nodes = [];
+          for (let i = 0; i < baseCount; i++) {
+            nodes.push({
+              x: p.random(p.width),
+              y: p.random(p.height),
+              vx: p.random(-0.35, 0.35),
+              vy: p.random(-0.35, 0.35),
+              r: p.random(1.4, 2.6),
+              // Monochrome intensity variance
+              intensity: p.random(210, 255),
+              pulsePhase: p.random(p.TWO_PI)
+            });
+          }
+        }
+
+        p.setup = function () {
+          const cnv = p.createCanvas(p.windowWidth, p.windowHeight);
+          cnv.parent("canvas-container");
+          computeDensity();
+          initNodes();
+          p.strokeCap(p.ROUND);
+        };
+
+        p.windowResized = function () {
+          p.resizeCanvas(p.windowWidth, p.windowHeight);
+          computeDensity();
+          initNodes();
+        };
+
+        function drawGrid() {
+          p.push();
+          p.translate(p.width / 2, p.height / 2);
+          p.rotate(gridTilt);
+          p.translate(-p.width / 2, -p.height / 2);
+
+          p.stroke(255, gridAlpha);
+          p.strokeWeight(1);
+
+          for (let x = 0; x < p.width + gridSpacing; x += gridSpacing) {
+            p.line(x, 0, x, p.height);
+          }
+          for (let y = 0; y < p.height + gridSpacing; y += gridSpacing) {
+            p.line(0, y, p.width, y);
+          }
+
+          p.pop();
+        }
+
+        p.draw = function () {
+          p.background(0);
+          drawGrid();
+
+          // Soft monochrome vignette
+          p.noStroke();
+          p.fill(255, 12);
+          p.rect(0, 0, p.width, p.height);
+
+          // Update nodes with wrap
+          for (let n of nodes) {
+            n.x += n.vx;
+            n.y += n.vy;
+            if (n.x < -20) n.x = p.width + 20;
+            if (n.x > p.width + 20) n.x = -20;
+            if (n.y < -20) n.y = p.height + 20;
+            if (n.y > p.height + 20) n.y = -20;
+          }
+
+          // Links (white lines, variable alpha/width)
+          for (let i = 0; i < nodes.length; i++) {
+            const a = nodes[i];
+            for (let j = i + 1; j < nodes.length; j++) {
+              const b = nodes[j];
+              const dx = a.x - b.x;
+              const dy = a.y - b.y;
+              const d = Math.sqrt(dx * dx + dy * dy);
+              if (d < linkThreshold) {
+                const nearMouseA = p.dist(a.x, a.y, p.mouseX, p.mouseY) < mouseInfluence;
+                const nearMouseB = p.dist(b.x, b.y, p.mouseX, p.mouseY) < mouseInfluence;
+                const boost = (nearMouseA || nearMouseB) ? 1.25 : 1.0;
+
+                const alpha = p.map(d, 0, linkThreshold, 180, 10) * boost;
+                const w = p.map(d, 0, linkThreshold, 2.2, 0.5) * boost;
+
+                p.stroke(255, alpha);
+                p.strokeWeight(w);
+                p.line(a.x, a.y, b.x, b.y);
+              }
+            }
+          }
+
+          // Nodes (white glow circles)
+          for (let n of nodes) {
+            const pulse = (p.sin(p.frameCount * 0.03 + n.pulsePhase) + 1) * 0.5;
+            const glow = 140 + 60 * pulse;
+            p.noStroke();
+            p.fill(n.intensity, glow * 0.3);
+            p.circle(n.x, n.y, n.r * 5.2);
+            p.fill(n.intensity, 220);
+            p.circle(n.x, n.y, n.r * (1.5 + 0.6 * pulse));
+          }
+        };
+
+        p.mouseMoved = function () {
+          // Nudge nodes away from mouse for interactivity
+          for (let n of nodes) {
+            const d = p.dist(n.x, n.y, p.mouseX, p.mouseY);
+            if (d < mouseInfluence) {
+              const angle = Math.atan2(n.y - p.mouseY, n.x - p.mouseX);
+              n.vx += 0.02 * Math.cos(angle);
+              n.vy += 0.02 * Math.sin(angle);
+              n.vx = Math.max(-0.6, Math.min(0.6, n.vx));
+              n.vy = Math.max(-0.6, Math.min(0.6, n.vy));
+            }
+          }
+        };
+
+        p.touchMoved = function () {
+          p.mouseMoved();
+          return false;
+        };
+      });
+    })();
+  </script>
+</body>
+</html>

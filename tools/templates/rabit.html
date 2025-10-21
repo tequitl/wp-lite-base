@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>RABIT Avenue — Rabbit Crossing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0b0b0b;
+      color: #fff;
+      font-family: monospace;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+    .hud {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 1;
+      background: rgba(0,0,0,0.35);
+      padding: 8px 12px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      backdrop-filter: blur(2px);
+      user-select: none;
+    }
+    .hud h1 {
+      margin: 0 0 6px 0;
+      font-size: 16px;
+      letter-spacing: 1px;
+    }
+    .hud p {
+      margin: 4px 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <!-- HUD: update goal text -->
+  <div class="hud">
+    <h1>RABIT Avenue</h1>
+    <p>Move: Arrow keys / WASD</p>
+    <p>Goal: Reach the top safe zone. Avoid jumping black rabbits.</p>
+    <p>Tip: Each level gets faster.</p>
+  </div>
+  <div id="canvas-container"></div>
+
+  <script src="https://unpkg.com/p5@1.9.0/lib/p5.min.js"></script>
+  <script>
+    const sketch = (p) => {
+      let tile = 48;
+      let cols = 14, rows;
+      let L = 6; // lane count
+      let lanes = [];
+
+      let level = 1;
+      let lives = 3;
+      let score = 0;
+      let speedFactor = 1;
+
+      let rabbit = { col: 0, row: 0 };
+      let state = 'play';
+      let screenShakeFrames = 0;
+
+      class Car {
+        constructor(x, y, w, h, dir, speed, color) {
+          this.x = x; this.y = y; this.w = w; this.h = h;
+          this.dir = dir; this.speed = speed; this.color = color;
+        }
+        update() {
+          this.x += this.speed * this.dir;
+        }
+        wrap() {
+          if (this.dir > 0 && this.x - this.w/2 > p.width + this.w) {
+            this.x = -this.w;
+          } else if (this.dir < 0 && this.x + this.w/2 < -this.w) {
+            this.x = p.width + this.w;
+          }
+        }
+        draw() {
+          p.push();
+          p.rectMode(p.CENTER);
+          p.noStroke();
+          p.fill(this.color);
+          p.rect(this.x, this.y, this.w, this.h, this.h * 0.22);
+
+          // simple windows
+          p.fill(255, 240);
+          const wx = this.w * 0.15 * this.dir;
+          p.rect(this.x - wx, this.y - this.h * 0.12, this.w * 0.35, this.h * 0.25, 4);
+          p.rect(this.x + wx, this.y - this.h * 0.12, this.w * 0.35, this.h * 0.25, 4);
+
+          // lights
+          if (this.dir > 0) {
+            p.fill(255);
+            p.circle(this.x + this.w/2 - 6, this.y - this.h/4, 4);
+            p.circle(this.x + this.w/2 - 6, this.y + this.h/4, 4);
+            p.fill(255, 70);
+            p.circle(this.x - this.w/2 + 6, this.y - this.h/4, 3);
+            p.circle(this.x - this.w/2 + 6, this.y + this.h/4, 3);
+          } else {
+            p.fill(255);
+            p.circle(this.x - this.w/2 + 6, this.y - this.h/4, 4);
+            p.circle(this.x - this.w/2 + 6, this.y + this.h/4, 4);
+            p.fill(255, 70);
+            p.circle(this.x + this.w/2 - 6, this.y - this.h/4, 3);
+            p.circle(this.x + this.w/2 - 6, this.y + this.h/4, 3);
+          }
+          p.pop();
+        }
+        collides(px, py, pr) {
+          const rx = p.constrain(px, this.x - this.w/2, this.x + this.w/2);
+          const ry = p.constrain(py, this.y - this.h/2, this.y + this.h/2);
+          const dx = px - rx;
+          const dy = py - ry;
+          return dx*dx + dy*dy < pr*pr;
+        }
+      }
+
+      class Lane {
+        constructor(y, dir, baseSpeed, gap) {
+          this.y = y; this.dir = dir;
+          this.baseSpeed = baseSpeed; this.gap = gap;
+          this.cars = [];
+          this.populate();
+        }
+        populate() {
+          const count = Math.max(1, Math.floor(p.width / this.gap));
+          for (let i = 0; i < count; i++) {
+            const w = p.random(tile * 1.2, tile * 2.2);
+            const h = tile * 0.8;
+            const x = (i * this.gap + p.random(-tile, tile)) % p.width;
+            const speed = this.baseSpeed * p.random(0.8, 1.25);
+            const color = p.color(p.random(40, 220), p.random(40, 220), p.random(40, 220));
+            const posX = (this.dir > 0) ? x : p.width - x;
+            this.cars.push(new Car(posX, this.y, w, h, this.dir, speed, color));
+          }
+        }
+        update() {
+          for (const car of this.cars) {
+            car.update();
+            car.wrap();
+          }
+        }
+        draw() {
+          // asphalt
+          p.push();
+          p.noStroke();
+          p.fill(24);
+          p.rectMode(p.CORNER);
+          p.rect(0, this.y - tile/2, p.width, tile);
+          // dashed center line
+          p.stroke(220);
+          p.strokeWeight(2);
+          p.drawingContext.setLineDash([12, 16]);
+          p.line(0, this.y, p.width, this.y);
+          p.drawingContext.setLineDash([]);
+          p.pop();
+
+          for (const car of this.cars) car.draw();
+        }
+      }
+
+      function resetRabbit() {
+        rabbit.col = Math.floor(cols / 2);
+        rabbit.row = rows - 1;
+      }
+
+      function drawRabbit(x, y) {
+        p.push();
+        p.noStroke();
+        // body
+        p.fill(245);
+        p.ellipse(x, y + tile * 0.1, tile * 0.5, tile * 0.6);
+        // head
+        p.ellipse(x, y - tile * 0.2, tile * 0.45, tile * 0.45);
+        // ears
+        p.fill(250);
+        p.ellipse(x - tile * 0.15, y - tile * 0.5, tile * 0.15, tile * 0.35);
+        p.ellipse(x + tile * 0.15, y - tile * 0.5, tile * 0.15, tile * 0.35);
+        // eye
+        p.fill(20);
+        p.circle(x + tile * 0.1, y - tile * 0.22, tile * 0.08);
+        // feet
+        p.fill(230);
+        p.ellipse(x - tile * 0.15, y + tile * 0.35, tile * 0.12, tile * 0.1);
+        p.ellipse(x + tile * 0.15, y + tile * 0.35, tile * 0.12, tile * 0.1);
+        p.pop();
+      }
+
+      function move(dx, dy) {
+        if (state !== 'play') return;
+        rabbit.col = p.constrain(rabbit.col + dx, 0, cols - 1);
+        rabbit.row = p.constrain(rabbit.row + dy, 0, rows - 1);
+      }
+
+      function levelUp() {
+        level++;
+        score += 100;
+        speedFactor *= 1.12;
+        setupGrid(); // rebuild lanes with increased speed
+      }
+
+      function hit() {
+        lives--;
+        screenShakeFrames = 20;
+        if (lives <= 0) {
+          state = 'gameover';
+        } else {
+          resetRabbit();
+        }
+      }
+
+      function setupGrid() {
+        rows = L + 2; // top+bottom safe zones
+        const targetH = Math.max(360, Math.min(window.innerHeight, 900));
+        const targetW = Math.max(640, window.innerWidth);
+
+        tile = Math.floor(targetH / rows);
+        const canvasH = tile * rows;
+        cols = Math.floor(targetW / tile);
+        const canvasW = tile * cols;
+
+        const c = p.createCanvas(canvasW, canvasH);
+        c.parent('canvas-container');
+
+        lanes = [];
+        for (let r = 1; r <= L; r++) {
+          const dir = (r % 2 === 0) ? 1 : -1;
+          const y = r * tile + tile / 2;
+          const baseSpeed = (0.6 + p.random(0.4)) * speedFactor * tile / 30; // px/frame
+          const gap = p.random(1.8, 3.2) * tile;
+          lanes.push(new Lane(y, dir, baseSpeed, gap));
+        }
+        resetRabbit();
+      }
+
+      p.setup = function() {
+        setupGrid();
+        p.textFont('monospace');
+      };
+
+      p.windowResized = function() {
+        setupGrid();
+      };
+
+      p.draw = function() {
+        // background + safe zones
+        p.background(12);
+        p.fill(20);
+        p.rect(0, 0, p.width, tile);                 // top safe zone
+        p.rect(0, p.height - tile, p.width, tile);   // bottom safe zone
+        p.stroke(180);
+        p.strokeWeight(3);
+        p.line(0, tile, p.width, tile);
+        p.line(0, p.height - tile, p.width, p.height - tile);
+
+        // lanes update/draw
+        for (const lane of lanes) {
+          lane.update();
+          lane.draw();
+        }
+
+        // rabbit position
+        let px = rabbit.col * tile + tile / 2;
+        let py = rabbit.row * tile + tile / 2;
+
+        // screen shake
+        if (screenShakeFrames > 0) {
+          const s = 2;
+          px += p.random(-s, s);
+          py += p.random(-s, s);
+          screenShakeFrames--;
+        }
+
+        // draw rabbit
+        drawRabbit(px, py);
+
+        // collision in lane rows
+        // In collision detection, iterate over lane.sheep
+        if (rabbit.row >= 1 && rabbit.row <= L && state === 'play') {
+        const lane = lanes[rabbit.row - 1];
+        for (const s of lane.sheep) {
+        if (s.collides(px, py, tile * 0.28)) {
+        hit();
+        break;
+        }
+        }
+        }
+
+        // goal check
+        if (rabbit.row === 0 && state === 'play') {
+          levelUp();
+        }
+
+        // HUD text
+        p.noStroke();
+        p.fill(255);
+        p.textSize(16);
+        p.text(`Level: ${level}   Lives: ${lives}   Score: ${score}`, 12, p.height - 16);
+
+        if (state === 'gameover') {
+          p.fill(0, 180);
+          p.rect(0, 0, p.width, p.height);
+          p.fill(255);
+          p.textSize(28);
+          p.textAlign(p.CENTER, p.CENTER);
+          p.text('Game Over', p.width / 2, p.height / 2 - 12);
+          p.textSize(16);
+          p.text('Press R to restart', p.width / 2, p.height / 2 + 18);
+          p.textAlign(p.LEFT, p.BASELINE);
+        }
+      };
+
+      p.keyPressed = function() {
+        if (p.keyCode === p.LEFT_ARROW || p.key === 'a' || p.key === 'A') move(-1, 0);
+        if (p.keyCode === p.RIGHT_ARROW || p.key === 'd' || p.key === 'D') move(1, 0);
+        if (p.keyCode === p.UP_ARROW || p.key === 'w' || p.key === 'W') move(0, -1);
+        if (p.keyCode === p.DOWN_ARROW || p.key === 's' || p.key === 'S') move(0, 1);
+
+        if (state === 'gameover' && (p.key === 'r' || p.key === 'R')) {
+          level = 1; lives = 3; score = 0; speedFactor = 1; state = 'play';
+          setupGrid();
+        }
+      };
+    };
+
+    new p5(sketch, 'canvas-container');
+  </script>
+</body>
+</html>
+
+<!-- Inside the main game <script> block: class RabbitObstacle -->
+<script>
+  class RabbitObstacle {
+    constructor(x, y, w, h, dir, speed) {
+      this.x = x; this.y = y; this.w = w; this.h = h;
+      this.dir = dir; this.speed = speed;
+      this.t = p.random(1000);           // phase for hop animation
+      this.hopAmp = h * 0.22;            // hop height
+      this.hopFreq = p.random(0.02, 0.03); // hop speed
+    }
+    update() {
+      this.x += this.speed * this.dir;
+      this.t += 1;
+    }
+    wrap() {
+      if (this.dir > 0 && this.x - this.w/2 > p.width + this.w) {
+        this.x = -this.w;
+      } else if (this.dir < 0 && this.x + this.w/2 < -this.w) {
+        this.x = p.width + this.w;
+      }
+    }
+    draw() {
+      const hop = -Math.abs(p.sin(this.t * this.hopFreq)) * this.hopAmp;
+      const y = this.y + hop;
+
+      p.push();
+      p.rectMode(p.CENTER);
+      p.noStroke();
+
+      // shadow
+      p.fill(0, 70);
+      p.ellipse(this.x, y + this.h * 0.42, this.w * 0.6, this.h * 0.28);
+
+      // body (black rabbit)
+      p.fill(15);
+      p.ellipse(this.x, y + this.h * 0.12, this.w * 0.8, this.h * 0.9);
+
+      // head
+      const hx = this.x + (this.dir > 0 ? this.w * 0.28 : -this.w * 0.28);
+      const hy = y - this.h * 0.05;
+      p.ellipse(hx, hy, this.w * 0.42, this.h * 0.42);
+
+      // ears
+      p.push();
+      p.translate(hx, hy - this.h * 0.32);
+      const earTilt = this.dir > 0 ? -0.15 : 0.15;
+      p.rotate(earTilt);
+      p.ellipse(-this.w * 0.08, 0, this.w * 0.12, this.h * 0.36);
+      p.rotate(-earTilt * 2);
+      p.ellipse(this.w * 0.08, 0, this.w * 0.12, this.h * 0.36);
+      p.pop();
+
+      // eye (dark gray for visibility)
+      p.fill(60);
+      p.circle(hx + (this.dir > 0 ? this.w * 0.06 : -this.w * 0.06), hy - this.h * 0.08, this.h * 0.08);
+
+      // feet hints
+      p.fill(25);
+      p.ellipse(this.x - this.w * 0.2, y + this.h * 0.35, this.w * 0.14, this.h * 0.12);
+      p.ellipse(this.x + this.w * 0.2, y + this.h * 0.35, this.w * 0.14, this.h * 0.12);
+
+      p.pop();
+    }
+    collides(px, py, pr) {
+      const hop = -Math.abs(p.sin(this.t * this.hopFreq)) * this.hopAmp;
+      const y = this.y + hop;
+      const rx = p.constrain(px, this.x - this.w/2, this.x + this.w/2);
+      const ry = p.constrain(py, y - this.h/2, y + this.h/2);
+      const dx = px - rx;
+      const dy = py - ry;
+      return dx*dx + dy*dy < pr*pr;
+    }
+  }
+</script>

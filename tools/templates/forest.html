@@ -1,0 +1,356 @@
+<!-- Add a HUD and the canvas container -->
+<div class="hud" style="position:fixed;top:12px;left:12px;z-index:10;background:rgba(0,0,0,0.45);color:#fff;border:1px solid #333;border-radius:6px;padding:8px 12px;font-family:monospace;backdrop-filter:blur(2px);">
+  <!-- ... existing code ... -->
+  <div style="font-weight:bold;letter-spacing:0.5px;">Ant Labyrinth</div>
+  <div style="font-size:12px;opacity:0.9;">
+    Controls: [M] new maze, [A] add ants, [R] reset ants, [P] toggle pheromone, [Space] pause
+  </div>
+  <!-- ... existing code ... -->
+</div>
+
+<div id="canvas-container" style="position:fixed;inset:0;z-index:0;"></div>
+<!-- Ensure p5.js is loaded, then add the new ants-labyrinth sketch -->
+<script src="https://unpkg.com/p5@1.9.0/lib/p5.min.js"></script>
+<script>
+  // ... existing code ...
+  const antLabyrinthSketch = (p) => {
+    let cols = 28;
+    let rows = 20;
+    let tile = 32;
+    let canvasW = 0, canvasH = 0;
+
+    // Maze cell structure
+    class Cell {
+      constructor(i, j) {
+        this.i = i; this.j = j;
+        this.visited = false;
+        this.walls = { top: true, right: true, bottom: true, left: true };
+      }
+    }
+
+    // Grid, ants, pheromones
+    let grid = [];
+    let pher = []; // pheromone level per cell
+    let ants = [];
+    let paused = false;
+    let showPher = true;
+
+    function idx(i, j) {
+      if (i < 0 || j < 0 || i >= cols || j >= rows) return -1;
+      return j * cols + i;
+    }
+
+    function centerOf(i, j) {
+      return {
+        x: i * tile + tile / 2,
+        y: j * tile + tile / 2
+      };
+    }
+
+    function neighborsUnvisited(i, j) {
+      const options = [];
+      const top = idx(i, j - 1);
+      const right = idx(i + 1, j);
+      const bottom = idx(i, j + 1);
+      const left = idx(i - 1, j);
+      if (top !== -1 && !grid[top].visited) options.push({ dir: 0, i, j, ni: i, nj: j - 1 });
+      if (right !== -1 && !grid[right].visited) options.push({ dir: 1, i, j, ni: i + 1, nj: j });
+      if (bottom !== -1 && !grid[bottom].visited) options.push({ dir: 2, i, j, ni: i, nj: j + 1 });
+      if (left !== -1 && !grid[left].visited) options.push({ dir: 3, i, j, ni: i - 1, nj: j });
+      return options;
+    }
+
+    function removeWall(a, b, dir) {
+      // dir: 0 top, 1 right, 2 bottom, 3 left
+      if (dir === 0) { a.walls.top = false; b.walls.bottom = false; }
+      if (dir === 1) { a.walls.right = false; b.walls.left = false; }
+      if (dir === 2) { a.walls.bottom = false; b.walls.top = false; }
+      if (dir === 3) { a.walls.left = false; b.walls.right = false; }
+    }
+
+    function generateMaze() {
+      // Build grid
+      grid = new Array(cols * rows);
+      pher = new Array(cols * rows);
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          grid[idx(i, j)] = new Cell(i, j);
+          pher[idx(i, j)] = 0;
+        }
+      }
+
+      // Recursive backtracker with stack
+      const stack = [];
+      const startI = 0, startJ = 0;
+      let current = grid[idx(startI, startJ)];
+      current.visited = true;
+      stack.push(current);
+
+      while (stack.length > 0) {
+        const cell = stack[stack.length - 1];
+        const opts = neighborsUnvisited(cell.i, cell.j);
+
+        if (opts.length > 0) {
+          const pick = p.random(opts);
+          const next = grid[idx(pick.ni, pick.nj)];
+          removeWall(cell, next, pick.dir);
+          next.visited = true;
+          stack.push(next);
+        } else {
+          stack.pop();
+        }
+      }
+    }
+
+    class Ant {
+      constructor(ci, cj) {
+        this.ci = ci; this.cj = cj;
+        this.pi = ci; this.pj = cj; // previous cell
+        // pick an initial neighbor
+        const ns = this.availableNeighbors(ci, cj);
+        const n = ns.length ? ns[p.floor(p.random(ns.length))] : { ni: ci, nj: cj };
+        this.ti = n.ni; this.tj = n.nj; // target cell
+        this.t = 0; // interpolation 0..1
+        this.speed = p.random(0.015, 0.025); // per-frame interpolation step
+        this.color = p.color(220, 220, 255); // soft light for visibility
+      }
+
+      availableNeighbors(i, j) {
+        const c = grid[idx(i, j)];
+        const ns = [];
+        if (!c.walls.top) ns.push({ ni: i, nj: j - 1, dir: 0 });
+        if (!c.walls.right) ns.push({ ni: i + 1, nj: j, dir: 1 });
+        if (!c.walls.bottom) ns.push({ ni: i, nj: j + 1, dir: 2 });
+        if (!c.walls.left) ns.push({ ni: i - 1, nj: j, dir: 3 });
+        // filter out of bounds just in case
+        return ns.filter(n => idx(n.ni, n.nj) !== -1);
+      }
+
+      pickNext() {
+        const ns = this.availableNeighbors(this.ci, this.cj);
+        // prefer not to immediately go back to previous cell unless needed
+        const filtered = ns.filter(n => !(n.ni === this.pi && n.nj === this.pj));
+        const candidates = filtered.length ? filtered : ns;
+
+        // bias toward lower pheromone (exploration) with a sprinkle of randomness
+        let best = null;
+        let bestScore = Infinity;
+        for (const n of candidates) {
+          const ph = pher[idx(n.ni, n.nj)];
+          const jitter = p.random(0.0, 0.05);
+          const score = ph + jitter;
+          if (score < bestScore) {
+            bestScore = score;
+            best = n;
+          }
+        }
+        // fallback
+        if (!best && candidates.length) best = candidates[0];
+
+        // set target
+        this.pi = this.ci; this.pj = this.cj;
+        if (best) {
+          this.ti = best.ni; this.tj = best.nj;
+        } else {
+          this.ti = this.ci; this.tj = this.cj;
+        }
+        this.t = 0;
+      }
+
+      update() {
+        // advance along corridor interpolation
+        this.t += this.speed;
+        if (this.t >= 1) {
+          // arrive at target
+          this.ci = this.ti; this.cj = this.tj;
+          // deposit pheromone
+          const id = idx(this.ci, this.cj);
+          pher[id] = Math.min(1.0, pher[id] + 0.08);
+          // choose next target
+          this.pickNext();
+        }
+      }
+
+      draw() {
+        const a = centerOf(this.pi, this.pj);
+        const b = centerOf(this.ti, this.tj);
+        const x = p.lerp(a.x, b.x, this.t);
+        const y = p.lerp(a.y, b.y, this.t);
+
+        // facing direction vector
+        const vx = b.x - a.x;
+        const vy = b.y - a.y;
+        const ang = Math.atan2(vy, vx);
+
+        p.push();
+        p.translate(x, y);
+        p.rotate(ang);
+        // body
+        p.noStroke();
+        p.fill(240);
+        p.ellipse(0, 0, tile * 0.22, tile * 0.16);
+        // head
+        p.ellipse(tile * 0.08, 0, tile * 0.12, tile * 0.12);
+        // legs
+        p.fill(200);
+        p.rect(-tile * 0.05, tile * 0.06, tile * 0.06, tile * 0.02, 2);
+        p.rect(tile * 0.02, -tile * 0.06, tile * 0.06, tile * 0.02, 2);
+        // antennae
+        p.stroke(220);
+        p.strokeWeight(2);
+        p.line(tile * 0.12, -tile * 0.02, tile * 0.18, -tile * 0.08);
+        p.line(tile * 0.12, tile * 0.02, tile * 0.18, tile * 0.08);
+        p.pop();
+      }
+    }
+
+    function evaporatePheromones() {
+      const evap = 0.995; // evaporation factor per frame
+      for (let k = 0; k < pher.length; k++) {
+        pher[k] *= evap;
+      }
+    }
+
+    function drawMaze() {
+      p.stroke(200);
+      p.strokeWeight(2);
+      p.noFill();
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          const c = grid[idx(i, j)];
+          const x = i * tile;
+          const y = j * tile;
+          // walls
+          if (c.walls.top)    p.line(x, y, x + tile, y);
+          if (c.walls.right)  p.line(x + tile, y, x + tile, y + tile);
+          if (c.walls.bottom) p.line(x, y + tile, x + tile, y + tile);
+          if (c.walls.left)   p.line(x, y, x, y + tile);
+        }
+      }
+    }
+
+    function drawPheromones() {
+      if (!showPher) return;
+      p.noStroke();
+      for (let j = 0; j < rows; j++) {
+        for (let i = 0; i < cols; i++) {
+          const ph = pher[idx(i, j)];
+          if (ph > 0.01) {
+            const alpha = p.map(ph, 0, 1, 0, 120);
+            p.fill(0, 255, 140, alpha);
+            p.rect(i * tile + 2, j * tile + 2, tile - 4, tile - 4, 4);
+          }
+        }
+      }
+    }
+
+    function seedAnts(n = 20) {
+      ants = [];
+      // start ants near bottom-left corridor cells (find any open cell)
+      for (let a = 0; a < n; a++) {
+        let ci = p.floor(p.random(cols));
+        let cj = p.floor(p.random(rows));
+        // ensure the cell has at least one open wall
+        let tries = 0;
+        while (tries < 200) {
+          const c = grid[idx(ci, cj)];
+          const openings = (!c.walls.top) || (!c.walls.right) || (!c.walls.bottom) || (!c.walls.left);
+          if (openings) break;
+          ci = p.floor(p.random(cols));
+          cj = p.floor(p.random(rows));
+          tries++;
+        }
+        ants.push(new Ant(ci, cj));
+      }
+    }
+
+    function layout() {
+      // pick tile to fit screen
+      const tw = Math.floor(window.innerWidth / cols);
+      const th = Math.floor(window.innerHeight / rows);
+      tile = Math.max(16, Math.min(tw, th));
+      canvasW = tile * cols;
+      canvasH = tile * rows;
+
+      const c = p.createCanvas(canvasW, canvasH);
+      c.parent('canvas-container');
+      p.pixelDensity(1);
+    }
+
+    p.setup = function() {
+      p.background(12);
+      layout();
+      generateMaze();
+      seedAnts(20);
+    };
+
+    p.windowResized = function() {
+      layout();
+      // Regenerate maze to fit new tile; reset pheromones/ants
+      generateMaze();
+      seedAnts(ants.length);
+    };
+
+    p.draw = function() {
+      if (paused) {
+        p.fill(12);
+        p.rect(0, 0, p.width, p.height);
+        drawMaze();
+        drawPheromones();
+        for (const ant of ants) ant.draw();
+        return;
+      }
+
+      p.background(12);
+
+      // pheromone evaporation
+      evaporatePheromones();
+
+      // ants update/draw
+      for (const ant of ants) {
+        ant.update();
+      }
+
+      // draw order: pheromones under maze, ants on top
+      drawPheromones();
+      drawMaze();
+      for (const ant of ants) ant.draw();
+
+      // footer info
+      p.noStroke();
+      p.fill(200);
+      p.textSize(14);
+      p.text(`Ants: ${ants.length}  Grid: ${cols}x${rows}`, 10, p.height - 10);
+    };
+
+    p.keyPressed = function() {
+      if (p.key === ' '){ paused = !paused; }
+      if (p.key === 'M' || p.key === 'm') {
+        generateMaze();
+        // clear pheromones
+        pher = pher.map(() => 0);
+        // keep same number of ants, reseed
+        seedAnts(ants.length);
+      }
+      if (p.key === 'A' || p.key === 'a') {
+        // add a few ants
+        const add = 5;
+        for (let k = 0; k < add; k++) {
+          let ci = p.floor(p.random(cols));
+          let cj = p.floor(p.random(rows));
+          ants.push(new Ant(ci, cj));
+        }
+      }
+      if (p.key === 'R' || p.key === 'r') {
+        seedAnts(20);
+        pher = pher.map(() => 0);
+      }
+      if (p.key === 'P' || p.key === 'p') {
+        showPher = !showPher;
+      }
+    };
+  };
+
+  new p5(antLabyrinthSketch, 'canvas-container');
+  // ... existing code ...
+</script>

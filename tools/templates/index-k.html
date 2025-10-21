@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WP‑NET — Kaleidoscope Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #000000;
+      --panel: #0a0f14;
+      --cyan: #00e5ff;
+      --cyan-dim: rgba(0, 229, 255, 0.3);
+      --magenta: #ff2a6d;
+      --violet: #a64dff;
+      --text: #cfefff;
+      --accent: #00ffc6;
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, sans-serif;
+      overflow: hidden;
+    }
+    /* Canvas sits behind everything */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+    /* Overlay subtle scanlines */
+    .scanlines:before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(transparent 0px, rgba(255,255,255,0.02) 2px, transparent 4px);
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* Centered card */
+    .form-container {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+    }
+    .login-card {
+      width: min(420px, 92vw);
+      background: linear-gradient(180deg, rgba(10,15,20,0.9), rgba(5,8,12,0.92));
+      border: 1px solid var(--cyan);
+      box-shadow:
+        0 0 18px var(--cyan-dim),
+        inset 0 0 12px rgba(166,77,255,0.15);
+      border-radius: 16px;
+      backdrop-filter: blur(4px);
+      padding: 2rem;
+      position: relative;
+    }
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+      text-shadow: 0 0 12px var(--cyan-dim);
+      margin: 0 0 0.5rem 0;
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .subtitle {
+      margin: 0 0 1.6rem 0;
+      color: #9ed3e6;
+      font-size: 0.95rem;
+    }
+    .field {
+      display: grid;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    label {
+      font-size: 0.85rem;
+      color: #8ecfe2;
+      letter-spacing: 0.04em;
+    }
+    input[type="text"], input[type="password"] {
+      background: #070b0f;
+      color: var(--text);
+      border: 1px solid rgba(0, 229, 255, 0.5);
+      border-radius: 12px;
+      padding: 0.8rem 1rem;
+      outline: none;
+      box-shadow:
+        0 0 0 2px rgba(0, 229, 255, 0.08),
+        inset 0 0 12px rgba(0, 229, 255, 0.06);
+      transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+      border-color: var(--accent);
+      box-shadow:
+        0 0 16px rgba(0, 255, 198, 0.25),
+        inset 0 0 14px rgba(0, 255, 198, 0.15);
+      transform: translateZ(0) scale(1.01);
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.8rem;
+    }
+    .remember {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: #8ecfe2;
+    }
+    button.login {
+      appearance: none;
+      border: 1px solid var(--cyan);
+      background: radial-gradient(100% 100% at 50% 0%, rgba(0,229,255,0.18) 0%, rgba(0,229,255,0.06) 60%, rgba(0,229,255,0.02) 100%),
+                  linear-gradient(180deg, rgba(0,229,255,0.12), rgba(0,229,255,0.06));
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.8rem 1.2rem;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 18px var(--cyan-dim);
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+    button.login:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 26px rgba(0,229,255,0.35);
+      border-color: var(--accent);
+    }
+    .links {
+      display: grid;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+    }
+    .links a {
+      color: var(--violet);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .links a:hover {
+      color: var(--magenta);
+      text-shadow: 0 0 8px rgba(255,42,109,0.35);
+    }
+    /* Decorative corner accents */
+    .login-card:before,
+    .login-card:after {
+      content: "";
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--cyan);
+      filter: drop-shadow(0 0 12px var(--cyan-dim));
+    }
+    .login-card:before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+    .login-card:after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+</head>
+<body class="scanlines">
+  <div id="canvas-container" aria-hidden="true"></div>
+  <main class="form-container">
+    <section class="login-card" role="form" aria-describedby="login-desc">
+      <h1 class="title">
+        <span>WP‑NET</span>
+      </h1>
+      <p id="login-desc" class="subtitle">Kaleidoscopic access gateway — Tron‑style symmetry.</p>
+
+      <form action="/wp-login.php" method="post">
+        <div class="field">
+          <label for="user_login">Username</label>
+          <input id="user_login" name="log" type="text" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="user_pass">Password</label>
+          <input id="user_pass" name="pwd" type="password" autocomplete="current-password" required />
+        </div>
+
+        <div class="actions">
+          <label class="remember">
+            <input type="checkbox" name="rememberme" value="forever" />
+            Remember me
+          </label>
+          <button class="login" type="submit">Enter Grid</button>
+        </div>
+
+        <input type="hidden" name="redirect_to" value="/" />
+      </form>
+
+      <div class="links">
+        <a href="/wp-login.php?action=lostpassword">Forgot password?</a>
+        <a href="/wp-login.php?action=register">Create account</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // p5.js instance-mode: kaleidoscope background
+    (function () {
+      new p5(function (p) {
+        // Stereogram mosaic (instance mode)
+        let center;
+        let g; // offscreen buffer for performance
+        const period = 64;                  // repeat period (tile width)
+        const maxShift = Math.floor(period / 3); // max disparity shift
+        let tileColors = [];
+        const resolutionFactor = 0.5;       // render at half res, scale up
+
+        p.setup = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.createCanvas(rect.width, rect.height);
+          center = p.createVector(p.width / 2, p.height / 2);
+
+          const gw = Math.max(2, Math.floor(p.width * resolutionFactor));
+          const gh = Math.max(2, Math.floor(p.height * resolutionFactor));
+          g = p.createGraphics(gw, gh);
+          g.pixelDensity(1);
+
+          // Base mosaic tiles (grayscale for classic stereogram feel)
+          tileColors = new Array(period).fill(0).map((_, i) => {
+            const v = Math.floor(p.map(p.noise(i * 0.2), 0, 1, 60, 220));
+            return [v, v, v]; // [r,g,b]
+          });
+
+          p.noStroke();
+        };
+
+        // Depth function: moving radial “bump” plus noise
+        function depthAt(x, y, t) {
+          const cx = g.width / 2 + Math.cos(t * 0.6) * g.width * 0.18;
+          const cy = g.height / 2 + Math.sin(t * 0.8) * g.height * 0.18;
+          const R = Math.min(g.width, g.height) * 0.35;
+
+          const dx = x - cx, dy = y - cy;
+          let v = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / R); // radial
+          v = Math.pow(v, 1.7); // ease-in for stronger center
+          const noise = p.noise(x * 0.02, y * 0.02, t * 0.2);
+          v = p.constrain(v + noise * 0.35, 0, 1);
+          return v;
+        }
+
+        p.draw = function () {
+          const t = p.frameCount * 0.02;
+
+          // Build stereogram mosaic in offscreen buffer
+          g.loadPixels();
+          const w = g.width, h = g.height;
+
+          for (let y = 0; y < h; y++) {
+            // Seed first 'period' columns with base tile colors
+            for (let x = 0; x < period && x < w; x++) {
+              const base = tileColors[x % period];
+              const idx = (y * w + x) * 4;
+              g.pixels[idx + 0] = base[0];
+              g.pixels[idx + 1] = base[1];
+              g.pixels[idx + 2] = base[2];
+              g.pixels[idx + 3] = 255;
+            }
+
+            // Propagate with depth-based horizontal disparity
+            for (let x = period; x < w; x++) {
+              const d = depthAt(x, y, t);
+              const shift = Math.floor(d * maxShift);
+              const src = x - period + shift;            // source column
+              const srcIdx = (y * w + src) * 4;
+              const dstIdx = (y * w + x) * 4;
+
+              g.pixels[dstIdx + 0] = g.pixels[srcIdx + 0];
+              g.pixels[dstIdx + 1] = g.pixels[srcIdx + 1];
+              g.pixels[dstIdx + 2] = g.pixels[srcIdx + 2];
+              g.pixels[dstIdx + 3] = 255;
+            }
+          }
+
+          g.updatePixels();
+
+          // Draw to main canvas (full-viewport), then subtle vignette
+          p.clear();
+          p.image(g, 0, 0, p.width, p.height);
+          p.fill(0, 70);
+          p.rect(0, 0, p.width, p.height);
+        };
+
+        p.windowResized = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.resizeCanvas(rect.width, rect.height);
+          center.set(p.width / 2, p.height / 2);
+
+          const gw = Math.max(2, Math.floor(p.width * resolutionFactor));
+          const gh = Math.max(2, Math.floor(p.height * resolutionFactor));
+          g = p.createGraphics(gw, gh);
+          g.pixelDensity(1);
+        };
+      });
+    })();
+  </script>
+</body>
+</html>

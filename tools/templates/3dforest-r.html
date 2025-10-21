@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D Forest (Retro Realism) — p5.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #0b0f1a; /* deep night */
+      color: #d7e0e5;
+      font-family: ui-monospace, Menlo, Monaco, "SF Mono", Consolas, monospace;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+    .hud {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      background: rgba(8, 12, 20, 0.7);
+      border: 1px solid #23303a;
+      border-radius: 6px;
+      padding: 10px 12px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 12px rgba(0, 255, 128, 0.06);
+      z-index: 3;
+    }
+    .hud b { color: #a5f5c1; }
+    .badge {
+      display: inline-block;
+      margin-right: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #29434e;
+      color: #b2dfdb;
+      background: rgba(11, 17, 26, 0.65);
+    }
+    .controls {
+      margin-top: 6px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="hud">
+    <div><span class="badge">3D Forest</span><b>Retro Realism (N64‑style)</b></div>
+    <div class="controls">
+      Drag: orbit camera | Scroll: zoom<br/>
+      Space: pause sway | R: regenerate | F: toggle fog | D: toggle dithering
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+  <script>
+    (function () {
+      new p5(function (p) {
+        // Renderer: 2D with manual 3D projection (N64-style sprite impostors)
+        let paused = false;
+
+        // Camera & projection
+        let camYaw = 0.5;
+        let camPitch = -0.35;
+        let camDist = 900;
+        let camHeight = 160;
+        const fov = p.PI / 3; // ~60 deg
+        let focal; // computed per frame: focal = (h/2) / tan(fov/2)
+        let cx, cy; // screen center
+
+        // Fog & dithering
+        let fogEnabled = true;
+        const fogColor = p.color(16, 22, 30);
+        const fogNear = 250;
+        const fogFar = 1500;
+        let ditherEnabled = true;
+        let ditherImg;
+
+        // Scene
+        let trees = [];
+        let forestRadius = 1400;
+        let treeCount = 220;
+
+        // Light direction for shadows (in world space)
+        const sunDir = p.createVector(0.6, -0.7, 0.4).normalize();
+
+        // Wind sway
+        let windPhase = 0;
+        let windSpeed = 0.8;
+        let windMag = 0.06;
+
+        // Sprites (LOD)
+        let trunkSprite, canopySprite;
+        let trunkSpriteSmall, canopySpriteSmall;
+
+        // Mountains (parallax layers)
+        let mountainLayers = [];
+
+        // Ground grid params (visual perspective lines)
+        const groundColorNear = p.color(20, 28, 34);
+        const groundColorFar = p.color(10, 14, 18);
+
+        // Utility: build ordered dithering image (Bayer 8x8)
+        function buildDither() {
+          const M = [
+            [0, 48, 12, 60, 3, 51, 15, 63],
+            [32, 16, 44, 28, 35, 19, 47, 31],
+            [8, 56, 4, 52, 11, 59, 7, 55],
+            [40, 24, 36, 20, 43, 27, 39, 23],
+            [2, 50, 14, 62, 1, 49, 13, 61],
+            [34, 18, 46, 30, 33, 17, 45, 29],
+            [10, 58, 6, 54, 9, 57, 5, 53],
+            [42, 26, 38, 22, 41, 25, 37, 21]
+          ];
+          const G = p.createGraphics(64, 64);
+          G.pixelDensity(1);
+          G.loadPixels();
+          for (let y = 0; y < 64; y++) {
+            for (let x = 0; x < 64; x++) {
+              const threshold = M[y % 8][x % 8] / 64.0;
+              const val = threshold < 0.5 ? 22 : 0; // subtle speckle
+              const idx = (y * 64 + x) * 4;
+              G.pixels[idx+0] = 255;
+              G.pixels[idx+1] = 255;
+              G.pixels[idx+2] = 255;
+              G.pixels[idx+3] = val;
+            }
+          }
+          G.updatePixels();
+          ditherImg = G;
+        }
+
+        // Build tree sprites (barked trunk + leafy canopy, with alpha)
+        function buildSprites() {
+          // Trunk
+          trunkSprite = p.createGraphics(34, 140);
+          trunkSprite.pixelDensity(1);
+          trunkSprite.noStroke();
+          for (let y = 0; y < trunkSprite.height; y++) {
+            const t = y / trunkSprite.height;
+            const col = p.lerpColor(p.color(46, 34, 24), p.color(78, 56, 40), t);
+            trunkSprite.fill(col);
+            trunkSprite.rect(0, y, trunkSprite.width, 1);
+          }
+          // Bark noise
+          trunkSprite.stroke(30, 20, 14, 80);
+          trunkSprite.strokeWeight(1);
+          for (let i = 0; i < trunkSprite.width * trunkSprite.height * 0.02; i++) {
+            const x = p.random(trunkSprite.width);
+            const y = p.random(trunkSprite.height);
+            trunkSprite.point(x, y);
+          }
+
+          // Canopy
+          canopySprite = p.createGraphics(180, 180);
+          canopySprite.pixelDensity(1);
+          canopySprite.clear();
+          canopySprite.noStroke();
+          for (let r = 88; r > 0; r--) {
+            const t = r / 88;
+            const col = p.lerpColor(p.color(24, 62, 32), p.color(74, 158, 84), 1 - t);
+            canopySprite.fill(p.red(col), p.green(col), p.blue(col), 180 + 60 * (1 - t));
+            canopySprite.circle(canopySprite.width / 2, canopySprite.height / 2, r * 2);
+          }
+          // Leaf noise flecks
+          canopySprite.noStroke();
+          for (let i = 0; i < 420; i++) {
+            const a = p.random(p.TWO_PI);
+            const r = 80 * Math.sqrt(Math.random());
+            const x = canopySprite.width / 2 + Math.cos(a) * r;
+            const y = canopySprite.height / 2 + Math.sin(a) * r;
+            canopySprite.fill(34, 92, 42, 120);
+            canopySprite.circle(x, y, p.random(1, 2.2));
+          }
+
+          // LOD small versions
+          trunkSpriteSmall = p.createGraphics(20, 100);
+          trunkSpriteSmall.image(trunkSprite, 0, 0, 20, 100);
+
+          canopySpriteSmall = p.createGraphics(96, 96);
+          canopySpriteSmall.image(canopySprite, 0, 0, 96, 96);
+        }
+
+        // Create parallax mountain layers (silhouette bands)
+        function buildMountains() {
+          mountainLayers = [];
+          for (let i = 0; i < 3; i++) {
+            const G = p.createGraphics(800, 200);
+            G.pixelDensity(1);
+            G.noStroke();
+            const base = p.color(18 + i*6, 24 + i*6, 30 + i*6);
+            for (let x = 0; x < G.width; x++) {
+              const h = 80 + 40 * Math.sin(x * 0.01 + i) + 20 * Math.sin(x * 0.03);
+              G.fill(base);
+              G.rect(x, G.height - h, 1, h);
+            }
+            mountainLayers.push(G);
+          }
+        }
+
+        // Generate forest
+        function regenerateForest() {
+          trees = [];
+          for (let i = 0; i < treeCount; i++) {
+            const r = forestRadius * Math.sqrt(Math.random());
+            const a = Math.random() * p.TWO_PI;
+            const x = Math.cos(a) * r;
+            const z = Math.sin(a) * r;
+            const trunkH = p.random(120, 200);
+            const canopyR = p.random(70, 110);
+            trees.push({
+              x, z,
+              trunkH, canopyR,
+              swayPhase: p.random(p.TWO_PI),
+              swayMag: p.random(0.02, 0.06)
+            });
+          }
+        }
+
+        // World -> view -> screen projection (manual perspective)
+        function project(wx, wy, wz) {
+          // Camera pos at (0, camHeight, camDist) looking at origin
+          const rx = wx;              // world relative (camera at x=0)
+          const ry = wy - camHeight;  // shift by camera height
+          const rz = wz - camDist;    // camera distance away from origin
+
+          // Apply inverse yaw (rotate world into camera view)
+          const cosy = Math.cos(-camYaw), siny = Math.sin(-camYaw);
+          let vx = cosy * rx + siny * rz;
+          let vz = -siny * rx + cosy * rz;
+          let vy = ry;
+
+          // Apply inverse pitch
+          const cosp = Math.cos(-camPitch), sinp = Math.sin(-camPitch);
+          const vy2 = cosp * vy + sinp * vz;
+          const vz2 = -sinp * vy + cosp * vz;
+          const vx2 = vx;
+
+          // Project
+          if (vz2 <= 1) return null; // behind/too close to camera
+          const s = focal / vz2;
+          return {
+            x: cx + vx2 * s,
+            y: cy - vy2 * s,
+            z: vz2,
+            scale: s
+          };
+        }
+
+        function drawGround() {
+          // Horizon gradient
+          const horizonY = cy + 40;
+          const gradH = p.height - horizonY;
+          for (let y = 0; y < gradH; y++) {
+            const t = y / gradH;
+            const col = p.lerpColor(groundColorFar, groundColorNear, t);
+            p.stroke(col);
+            p.line(0, horizonY + y, p.width, horizonY + y);
+          }
+
+          // Perspective grid: lines radiating from horizon center
+          p.stroke(24, 32, 40, 120);
+          p.strokeWeight(1);
+          const cxGrid = cx, cyGrid = horizonY;
+          for (let i = -10; i <= 10; i++) {
+            const ang = i * 0.07 + camYaw * 0.2;
+            const x2 = cxGrid + Math.cos(ang) * p.width;
+            const y2 = p.height;
+            p.line(cxGrid, cyGrid, x2, y2);
+          }
+          // Horizontal bands
+          for (let i = 1; i <= 8; i++) {
+            const t = i / 8;
+            const y = cyGrid + t * (p.height - cyGrid);
+            p.stroke(24, 32, 40, 70 * (1 - t));
+            p.line(0, y, p.width, y);
+          }
+        }
+
+        function drawMountains(time) {
+          const horizonY = cy + 10;
+          p.noStroke();
+          for (let i = 0; i < mountainLayers.length; i++) {
+            const G = mountainLayers[i];
+            const parallax = 0.02 + i * 0.015;
+            const scroll = Math.sin(time * (0.2 + i*0.1)) * 120;
+            const x = cx - G.width / 2 + scroll * parallax;
+            const y = horizonY - (i + 1) * 40;
+            p.image(G, x, y);
+          }
+        }
+
+        function drawTree(t, time) {
+          // Base position at y=0
+          const sway = paused ? 0 : Math.sin(time * windSpeed + t.swayPhase) * t.swayMag;
+          const wx = t.x + sway * 30;
+          const wy_trunk_top = t.trunkH;
+          const wz = t.z;
+
+          // Project base to screen for shadow and trunk bottom
+          const base = project(wx, 0, wz);
+          if (!base) return;
+
+          // Fog factor by distance
+          const fog = fogEnabled ? p.constrain((base.z - fogNear) / (fogFar - fogNear), 0, 1) : 0;
+
+          // Draw soft shadow (project a flat ellipse onto ground)
+          const sunProj = project(wx + sunDir.x * 50, 0, wz + sunDir.z * 50);
+          const shadowScale = p.constrain(base.scale * 0.9, 0.1, 2.0);
+          const shx = sunProj ? sunProj.x : base.x + 30;
+          const shy = sunProj ? sunProj.y : base.y + 10;
+          p.noStroke();
+          p.fill(20, 24, 28, 80 * (1 - fog));
+          p.ellipse(shx, shy, 80 * shadowScale, 36 * shadowScale);
+
+          // Choose LOD sprite size based on on-screen scale
+          const canopySpriteUse = (base.scale * canopySprite.width < 48) ? canopySpriteSmall : canopySprite;
+          const trunkSpriteUse = (base.scale * trunkSprite.height < 80) ? trunkSpriteSmall : trunkSprite;
+
+          // Draw trunk (billboard sprite)
+          const trunkTop = project(wx, wy_trunk_top, wz);
+          if (!trunkTop) return;
+
+          const trunkHpx = (trunkTop.y - base.y);
+          const trunkWpx = (trunkSpriteUse.width * (trunkHpx / trunkSpriteUse.height));
+          // Tint for fog (alpha fade + slight desaturation)
+          const trunkAlpha = 255 * (1 - fog * 0.8);
+          p.tint(255, trunkAlpha);
+          p.image(
+            trunkSpriteUse,
+            base.x - trunkWpx / 2,
+            trunkTop.y - trunkHpx,
+            trunkWpx,
+            trunkHpx
+          );
+          p.noTint();
+
+          // Draw canopy (billboard sprite) centered at trunk top with wind sway offset
+          const canopyCenter = project(wx + sway * 20, wy_trunk_top + t.canopyR * 0.2, wz);
+          if (!canopyCenter) return;
+          const canopySize = t.canopyR * 2 * canopyCenter.scale;
+          const canopyAlpha = 255 * (1 - fog * 0.7);
+          p.tint(255, canopyAlpha);
+          p.image(
+            canopySpriteUse,
+            canopyCenter.x - canopySize / 2,
+            canopyCenter.y - canopySize / 2,
+            canopySize,
+            canopySize
+          );
+          p.noTint();
+        }
+
+        p.setup = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.createCanvas(rect.width, rect.height);
+          p.frameRate(60);
+          cx = p.width / 2;
+          cy = p.height * 0.58;
+          buildDither();
+          buildSprites();
+          buildMountains();
+          regenerateForest();
+        };
+
+        p.draw = function () {
+          const time = p.millis() * 0.001;
+          focal = (p.height / 2) / Math.tan(fov / 2);
+
+          // Background + distant mountains/horizon
+          p.background(12, 16, 22);
+          drawMountains(time);
+          drawGround();
+
+          // Update wind
+          windPhase += 0.01;
+
+          // Build render list with depth
+          const renderList = [];
+          for (const t of trees) {
+            const base = project(t.x, 0, t.z);
+            if (!base) continue;
+            renderList.push({ t, z: base.z });
+          }
+          // Painter's algorithm: far to near
+          renderList.sort((a, b) => b.z - a.z);
+
+          // Draw trees
+          for (const item of renderList) {
+            drawTree(item.t, time);
+          }
+
+          // Full-screen fog glow near horizon (cheap atmospheric perspective)
+          if (fogEnabled) {
+            const horizonY = cy + 20;
+            const bandH = p.height - horizonY;
+            for (let y = 0; y < bandH; y++) {
+              const t = y / bandH;
+              const a = 50 * (1 - t);
+              p.stroke(p.red(fogColor), p.green(fogColor), p.blue(fogColor), a);
+              p.line(0, horizonY + y, p.width, horizonY + y);
+            }
+          }
+
+          // Dithering overlay (ordered noise, scaled)
+          if (ditherEnabled && ditherImg) {
+            p.push();
+            p.blendMode(p.MULTIPLY);
+            const scale = 6; // coarse pattern
+            for (let y = 0; y < p.height; y += ditherImg.height * scale) {
+              for (let x = 0; x < p.width; x += ditherImg.width * scale) {
+                p.image(ditherImg, x, y, ditherImg.width * scale, ditherImg.height * scale);
+              }
+            }
+            p.pop();
+          }
+        };
+
+        // Controls
+        p.mouseDragged = function () {
+          const dx = p.movedX || 0;
+          const dy = p.movedY || 0;
+          camYaw += dx * 0.005;
+          camPitch += dy * 0.003;
+          camPitch = p.constrain(camPitch, -0.9, -0.1);
+        };
+
+        p.mouseWheel = function (e) {
+          camDist += e.delta * 0.7;
+          camDist = p.constrain(camDist, 500, 2000);
+        };
+
+        p.keyPressed = function () {
+          if (p.key === ' ') {
+            paused = !paused;
+          } else if (p.key === 'r' || p.key === 'R') {
+            regenerateForest();
+          } else if (p.key === 'f' || p.key === 'F') {
+            fogEnabled = !fogEnabled;
+          } else if (p.key === 'd' || p.key === 'D') {
+            ditherEnabled = !ditherEnabled;
+          }
+        };
+
+        p.windowResized = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.resizeCanvas(rect.width, rect.height);
+          cx = p.width / 2;
+          cy = p.height * 0.58;
+          buildDither();
+        };
+      });
+    })();
+  </script>
+</body>
+</html>

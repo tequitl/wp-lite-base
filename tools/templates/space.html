@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WP-NET Space — Retrofuturistic Starfield (p5.js)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #06070a; /* deep black */
+      color: #cfd8dc;
+      font-family: ui-monospace, Menlo, Monaco, "SF Mono", Consolas, monospace;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+    .hud {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      background: rgba(6, 8, 12, 0.68);
+      border: 1px solid #1a1f2b;
+      border-radius: 6px;
+      padding: 10px 12px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 14px rgba(0, 255, 208, 0.08);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .hud b { color: #8ae6ff; }
+    .badge {
+      display: inline-block;
+      margin-right: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #1f2b3a;
+      color: #b2dfdb;
+      background: rgba(8, 12, 16, 0.65);
+    }
+    .controls {
+      margin-top: 6px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="hud">
+    <div><span class="badge">WP‑NET</span><b>Retrofuturistic Space</b></div>
+    <div class="controls">
+      Drag: steer | Scroll: speed<br/>
+      Space: pause | R: respawn ships | T: trails | S: scanlines
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+  <script>
+    (function () {
+      new p5(function (p) {
+        // Camera & projection (manual 3D -> 2D)
+        const FOV = p.PI / 3;
+        let focal = 1;
+        let cx = 0, cy = 0;
+        let camYaw = 0;
+        let camPitch = -0.15;
+        let speed = 7.5;
+        let paused = false;
+
+        // World bounds
+        const NEAR_Z = 40;
+        const FAR_Z = 3000;
+        const STAR_RANGE = 1400;
+
+        // Stars
+        const STAR_COUNT = 900;
+        let stars = [];
+
+        // Starships
+        const SHIP_COUNT = 14;
+        let ships = [];
+        let trailsEnabled = true;
+
+        // Scanlines overlay
+        let scanlinesEnabled = true;
+
+        // Palette
+        const palette = {
+          bg: p.color(6, 7, 10),
+          neonCyan: p.color(0, 255, 208),
+          neonMagenta: p.color(255, 0, 180),
+          neonPurple: p.color(138, 43, 226),
+          neonBlue: p.color(0, 170, 255),
+          neonGreen: p.color(0, 255, 136),
+          softWhite: p.color(225, 240, 255)
+        };
+
+        function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+        function spawnStar(star) {
+          star.x = randBetween(-STAR_RANGE, STAR_RANGE);
+          star.y = randBetween(-STAR_RANGE, STAR_RANGE);
+          star.z = randBetween(NEAR_Z + 200, FAR_Z);
+          star.tw = Math.random() * p.TWO_PI;
+          star.hue = Math.random() < 0.75 ? palette.softWhite : (Math.random() < 0.5 ? palette.neonCyan : palette.neonPurple);
+          star.size = randBetween(0.6, 1.8);
+        }
+
+        function spawnShip(ship) {
+          const r = STAR_RANGE * Math.sqrt(Math.random());
+          const a = Math.random() * p.TWO_PI;
+          ship.x = Math.cos(a) * r * 0.8;
+          ship.y = randBetween(-STAR_RANGE * 0.4, STAR_RANGE * 0.4);
+          ship.z = randBetween(NEAR_Z + 800, FAR_Z - 400);
+          // Velocity with slight bias forward
+          ship.vx = randBetween(-0.7, 0.7);
+          ship.vy = randBetween(-0.4, 0.4);
+          ship.vz = randBetween(-3.0, 3.0) - speed * 0.3;
+          ship.roll = randBetween(-p.PI / 8, p.PI / 8);
+          ship.color = [palette.neonCyan, palette.neonMagenta, palette.neonBlue, palette.neonPurple, palette.neonGreen][Math.floor(Math.random() * 5)];
+          ship.size = randBetween(22, 42);
+          ship.twist = Math.random() * p.TWO_PI;
+          ship.trail = [];
+          ship.maxTrail = 16 + Math.floor(Math.random() * 16);
+        }
+
+        function buildScene() {
+          stars = new Array(STAR_COUNT).fill(0).map(() => {
+            const s = {};
+            spawnStar(s);
+            return s;
+          });
+          ships = new Array(SHIP_COUNT).fill(0).map(() => {
+            const ship = {};
+            spawnShip(ship);
+            return ship;
+          });
+        }
+
+        function project(wx, wy, wz) {
+          // Rotate world by inverse camera yaw/pitch into view space
+          const cosy = Math.cos(-camYaw), siny = Math.sin(-camYaw);
+          let vx = cosy * wx + siny * wz;
+          let vz = -siny * wx + cosy * wz;
+          let vy = wy;
+
+          const cosp = Math.cos(-camPitch), sinp = Math.sin(-camPitch);
+          const vy2 = cosp * vy + sinp * vz;
+          const vz2 = -sinp * vy + cosp * vz;
+          const vx2 = vx;
+
+          if (vz2 <= 1) return null;
+          const s = focal / vz2;
+          return { x: cx + vx2 * s, y: cy - vy2 * s, z: vz2, scale: s };
+        }
+
+        function updateStars() {
+          for (const s of stars) {
+            if (!paused) s.z -= speed;
+            if (s.z <= NEAR_Z) spawnStar(s);
+          }
+        }
+
+        function drawStars(time) {
+          // Warp streak effect based on speed
+          const streakLen = p.map(speed, 0, 30, 0, 20);
+          for (const s of stars) {
+            const P = project(s.x, s.y, s.z);
+            if (!P) continue;
+            const twinkle = (Math.sin(time * 4 + s.tw) + 1) * 0.5;
+            const alpha = 100 + twinkle * 155;
+            const size = s.size * (0.7 + 0.3 * twinkle) * (0.5 + P.scale * 0.7);
+
+            p.noStroke();
+            p.fill(p.red(s.hue), p.green(s.hue), p.blue(s.hue), alpha);
+            p.circle(P.x, P.y, size);
+
+            // Streak
+            if (streakLen > 0.5) {
+              p.stroke(p.red(s.hue), p.green(s.hue), p.blue(s.hue), alpha * 0.7);
+              p.strokeWeight(1);
+              p.line(P.x, P.y, P.x, P.y + streakLen);
+            }
+          }
+        }
+
+        function updateShips() {
+          for (const shp of ships) {
+            if (!paused) {
+              shp.x += shp.vx;
+              shp.y += shp.vy;
+              shp.z += shp.vz - speed * 0.4; // scene moving forward
+              // Gentle drift to keep movement interesting
+              shp.vx += Math.sin(shp.twist + p.frameCount * 0.002) * 0.02;
+              shp.vy += Math.cos(shp.twist + p.frameCount * 0.003) * 0.015;
+              shp.roll += (Math.random() - 0.5) * 0.004;
+            }
+            // Bounds and respawn
+            if (Math.abs(shp.x) > STAR_RANGE * 1.4 || Math.abs(shp.y) > STAR_RANGE || shp.z < NEAR_Z + 80 || shp.z > FAR_Z + 300) {
+              spawnShip(shp);
+            }
+          }
+        }
+
+        function drawShip(shp) {
+          const P = project(shp.x, shp.y, shp.z);
+          if (!P) return;
+
+          // Heading from projected motion (screen-space)
+          const Pprev = project(shp.x - shp.vx * 6, shp.y - shp.vy * 6, shp.z - shp.vz * 6);
+          let ang = 0;
+          if (Pprev) {
+            const dx = P.x - Pprev.x;
+            const dy = P.y - Pprev.y;
+            ang = Math.atan2(dy, dx);
+          }
+
+          const size = shp.size * (0.6 + 0.6 * P.scale);
+          const glow = 180;
+          const c = shp.color;
+          const rr = p.red(c), gg = p.green(c), bb = p.blue(c);
+
+          // Trail
+          if (trailsEnabled) {
+            shp.trail.push({ x: P.x, y: P.y, alpha: 160 });
+            if (shp.trail.length > shp.maxTrail) shp.trail.shift();
+            p.noFill();
+            p.stroke(rr, gg, bb, 80);
+            p.strokeWeight(1.4);
+            for (let i = 1; i < shp.trail.length; i++) {
+              const a = shp.trail[i-1], b = shp.trail[i];
+              p.line(a.x, a.y, b.x, b.y);
+              b.alpha = Math.max(0, b.alpha - 4);
+            }
+          }
+
+          // Ship body: neon triangle + cockpit dot
+          p.push();
+          p.translate(P.x, P.y);
+          p.rotate(ang + shp.roll);
+
+          // Outer glow lines
+          p.noFill();
+          p.stroke(rr, gg, bb, glow);
+          p.strokeWeight(1.8);
+          p.beginShape();
+          p.vertex(-size * 0.5, size * 0.35);
+          p.vertex(size * 0.55, 0);
+          p.vertex(-size * 0.5, -size * 0.35);
+          p.endShape(p.CLOSE);
+
+          // Inner solid
+          p.noStroke();
+          p.fill(rr, gg, bb, 140);
+          p.beginShape();
+          p.vertex(-size * 0.45, size * 0.28);
+          p.vertex(size * 0.48, 0);
+          p.vertex(-size * 0.45, -size * 0.28);
+          p.endShape(p.CLOSE);
+
+          // Cockpit glow
+          p.fill(255, 255, 255, 180);
+          p.circle(size * 0.05, 0, size * 0.08);
+
+          p.pop();
+        }
+
+        function drawShips() {
+          // Painter’s algorithm: sort by depth so trails don’t pop
+          const list = [];
+          for (const s of ships) {
+            const P = project(s.x, s.y, s.z);
+            if (!P) continue;
+            list.push({ s, z: P.z });
+          }
+          list.sort((a, b) => b.z - a.z);
+          for (const it of list) drawShip(it.s);
+        }
+
+        function drawWarpGrid(time) {
+          // Neon rails converging to vanishing point
+          p.stroke(0, 255, 208, 50);
+          p.strokeWeight(1);
+          const vpX = cx, vpY = cy;
+          const lanes = 16;
+          for (let i = -lanes; i <= lanes; i++) {
+            const ang = i * 0.06 + camYaw * 0.2;
+            const x2 = vpX + Math.cos(ang) * p.width;
+            const y2 = p.height;
+            p.line(vpX, vpY, x2, y2);
+          }
+          // Horizontal speed bands
+          const bands = 10;
+          for (let i = 1; i <= bands; i++) {
+            const t = i / bands;
+            const y = vpY + t * (p.height - vpY);
+            const alpha = 80 * (1 - t);
+            p.stroke(255, 0, 180, alpha);
+            p.line(0, y + Math.sin(time * 1.2 + i) * 2, p.width, y + Math.sin(time * 1.2 + i) * 2);
+          }
+        }
+
+        function drawScanlines() {
+          if (!scanlinesEnabled) return;
+          p.push();
+          p.blendMode(p.MULTIPLY);
+          p.stroke(255, 255, 255, 10);
+          p.strokeWeight(1);
+          for (let y = 0; y < p.height; y += 2) {
+            p.line(0, y, p.width, y);
+          }
+          p.pop();
+        }
+
+        p.setup = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.createCanvas(rect.width, rect.height);
+          cx = p.width / 2;
+          cy = p.height * 0.55;
+          focal = (p.height / 2) / Math.tan(FOV / 2);
+          buildScene();
+          p.frameRate(60);
+        };
+
+        p.draw = function () {
+          const time = p.millis() * 0.001;
+          focal = (p.height / 2) / Math.tan(FOV / 2);
+
+          // Background
+          p.background(palette.bg);
+
+          // Grid rails
+          drawWarpGrid(time);
+
+          // Update and draw stars and ships
+          updateStars();
+          drawStars(time);
+          updateShips();
+          drawShips();
+
+          // HUD scanlines
+          drawScanlines();
+        };
+
+        // Controls
+        p.mouseDragged = function () {
+          const dx = p.movedX || 0;
+          const dy = p.movedY || 0;
+          camYaw += dx * 0.004;
+          camPitch += dy * 0.003;
+          camPitch = p.constrain(camPitch, -0.8, 0.2);
+        };
+
+        p.mouseWheel = function (e) {
+          speed += e.delta * 0.01;
+          speed = p.constrain(speed, 0.5, 30);
+        };
+
+        p.keyPressed = function () {
+          if (p.key === ' ') {
+            paused = !paused;
+          } else if (p.key === 'r' || p.key === 'R') {
+            buildScene();
+          } else if (p.key === 't' || p.key === 'T') {
+            trailsEnabled = !trailsEnabled;
+            for (const s of ships) s.trail = [];
+          } else if (p.key === 's' || p.key === 'S') {
+            scanlinesEnabled = !scanlinesEnabled;
+          }
+        };
+
+        p.windowResized = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.resizeCanvas(rect.width, rect.height);
+          cx = p.width / 2;
+          cy = p.height * 0.55;
+          focal = (p.height / 2) / Math.tan(FOV / 2);
+        };
+      });
+    })();
+  </script>
+</body>
+</html>

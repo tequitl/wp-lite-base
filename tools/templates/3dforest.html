@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>3D Forest — Black Futurism (p5.js)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #06070b; /* deep black */
+      color: #cfd8dc;
+      font-family: ui-monospace, Menlo, Monaco, "SF Mono", Consolas, monospace;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+    .hud {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      background: rgba(6, 8, 12, 0.7);
+      border: 1px solid #1a1f2b;
+      border-radius: 6px;
+      padding: 10px 12px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 14px rgba(0, 255, 208, 0.08);
+      z-index: 3;
+    }
+    .hud b { color: #8ae6ff; }
+    .badge {
+      display: inline-block;
+      margin-right: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #1f2b3a;
+      color: #b2dfdb;
+      background: rgba(8, 12, 16, 0.65);
+    }
+    .controls {
+      margin-top: 6px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div class="hud">
+    <div><span class="badge">3D Forest</span><b>Black Futurism</b></div>
+    <div class="controls">
+      Drag: orbit camera | Scroll: zoom<br/>
+      Space: pause | R: regenerate | G: grid | L: lights | B: bloom | W: rotate wind
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+  <script>
+    (function () {
+      new p5(function (p) {
+        // Renderer: WEBGL with instance mode
+        let paused = false;
+
+        // Camera orbit
+        let camAngleX = -0.4; // tilt
+        let camAngleY = 0.6;  // yaw
+        let camDist = 950;    // distance
+
+        // Scene
+        let forest = [];
+        let forestRadius = 1200;
+        let treeCount = 180;
+
+        // Wind
+        const windDirs = [
+          p.createVector(1, 0),   // E
+          p.createVector(1, 1),   // SE
+          p.createVector(0, 1),   // S
+          p.createVector(-1, 1),  // SW
+          p.createVector(-1, 0),  // W
+          p.createVector(-1, -1), // NW
+          p.createVector(0, -1),  // N
+          p.createVector(1, -1)   // NE
+        ].map(v => v.normalize());
+        let windIndex = 0;
+        let windStrength = 0.8;
+
+        // Toggles
+        let showGrid = true;
+        let showLights = true;
+        let showBloom = true;
+
+        // Overlay bloom buffer (2D)
+        let overlay;
+
+        // Black Futurism palette
+        const palette = {
+          bg: p.color(6, 7, 11),
+          neonCyan: p.color(0, 255, 208),
+          neonMagenta: p.color(255, 0, 180),
+          neonPurple: p.color(138, 43, 226),
+          neonBlue: p.color(0, 170, 255),
+          neonGreen: p.color(0, 255, 136),
+          gold: p.color(255, 213, 79),
+          deepRed: p.color(255, 51, 102)
+        };
+
+        class Tree {
+          constructor(x, z, seed) {
+            this.x = x;
+            this.z = z;
+            this.seed = seed;
+            const hBase = p.random(120, 260);
+            this.trunkH = hBase * p.random(0.45, 0.75);
+            this.trunkR = p.random(10, 18);
+            this.canopyH = hBase * p.random(0.6, 1.1); // total canopy stack height
+            this.swayPhase = p.random(p.TWO_PI);
+            this.swayMag = p.random(0.01, 0.025);
+            this.tint = p.random([palette.neonGreen, palette.neonCyan, palette.neonBlue, palette.neonPurple, palette.neonMagenta]);
+          }
+
+          draw(time) {
+            p.push();
+            // Position tree
+            p.translate(this.x, 0, this.z);
+
+            // Sway due to wind (rotate around Z/X a bit)
+            const sway = Math.sin(time * 0.8 + this.swayPhase) * this.swayMag * (0.6 + windStrength * 0.6);
+            const wd = windDirs[windIndex];
+            p.rotateX(sway * wd.y);
+            p.rotateZ(sway * wd.x);
+
+            // Trunk (cylinder)
+            if (showLights) {
+              p.specularMaterial(30, 40, 60);
+              p.shininess(60);
+            } else {
+              p.fill(30, 40, 60);
+            }
+            p.noStroke();
+            p.push();
+            p.translate(0, -this.trunkH / 2, 0);
+            p.cylinder(this.trunkR, this.trunkH, 16, 1);
+            p.pop();
+
+            // Canopy: stacked glowing cones
+            const segments = 3;
+            const coneBase = Math.max(this.trunkR * 5, 120);
+            for (let i = 0; i < segments; i++) {
+              const t = i / segments;
+              const h = this.canopyH * (0.30 + 0.25 * (1 - t));
+              const r = coneBase * (1.0 - t * 0.35);
+              const y = -this.trunkH - (i * h * 0.85);
+
+              // Neon fill + faint glow outline
+              const glowAlpha = 50 + 40 * (1 - t);
+              const c = this.tint;
+              const rC = p.red(c), gC = p.green(c), bC = p.blue(c);
+
+              if (showLights) {
+                p.emissiveMaterial(rC * 0.3, gC * 0.3, bC * 0.3);
+              } else {
+                p.fill(rC, gC, bC, 220);
+              }
+              p.noStroke();
+              p.push();
+              p.translate(0, y, 0);
+              p.cone(r, h, 24, 1, true);
+              p.pop();
+
+              // Outline glow (wireframe-like)
+              p.push();
+              p.translate(0, y, 0);
+              p.noFill();
+              p.stroke(rC, gC, bC, glowAlpha);
+              p.strokeWeight(1.2);
+              // draw multiple circles for glow layers
+              for (let k = 0; k < 3; k++) {
+                const rr = r * (1.0 - 0.08 * k);
+                p.circle(0, 0, rr * 2); // billboard circle in WebGL draws in XY-plane
+              }
+              p.pop();
+            }
+
+            p.pop();
+          }
+        }
+
+        function regenerateForest() {
+          forest = [];
+          for (let i = 0; i < treeCount; i++) {
+            // Sample within disc
+            const r = forestRadius * Math.sqrt(Math.random());
+            const a = Math.random() * p.TWO_PI;
+            const x = Math.cos(a) * r;
+            const z = Math.sin(a) * r;
+            forest.push(new Tree(x, z, Math.random()));
+          }
+        }
+
+        function drawGrid(time) {
+          if (!showGrid) return;
+          p.push();
+          // Ground plane center (XY plane in WEBGL is horizontal when rotated)
+          p.rotateX(p.HALF_PI);
+          const step = 120;
+          const size = forestRadius * 1.2;
+          const half = size / 2;
+
+          // Tron-like neon grid that pulses
+          const pulse = (Math.sin(time * 1.2) + 1) * 0.5;
+          const glow = 140 + pulse * 80;
+          p.stroke(0, 255, 208, glow); // neon cyan
+          p.strokeWeight(1);
+
+          // Draw grid lines
+          for (let x = -half; x <= half; x += step) {
+            p.line(x, -half, x, half);
+          }
+          for (let y = -half; y <= half; y += step) {
+            p.line(-half, y, half, y);
+          }
+
+          // Horizon neon rim
+          p.stroke(255, 0, 180, 90); // neon magenta
+          p.line(-half, -half, half, -half);
+          p.line(-half, half, half, half);
+
+          p.pop();
+        }
+
+        function drawSkyObjects(time) {
+          // Neon "sun" disc hovering
+          p.push();
+          const sunY = -380;
+          const sunZ = -900;
+          p.translate(0, sunY, sunZ);
+          const sunR = 220 + Math.sin(time * 0.5) * 18;
+
+          const c1 = palette.neonMagenta;
+          const c2 = palette.neonBlue;
+
+          // Emissive neon disc
+          if (showLights) {
+            p.emissiveMaterial(p.red(c1), p.green(c1), p.blue(c1));
+          } else {
+            p.fill(p.red(c1), p.green(c1), p.blue(c1), 230);
+          }
+          p.noStroke();
+          p.circle(0, 0, sunR);
+
+          // Halo rings
+          p.noFill();
+          p.stroke(p.red(c2), p.green(c2), p.blue(c2), 80);
+          p.strokeWeight(1.2);
+          for (let i = 0; i < 4; i++) {
+            const rr = sunR + i * 22;
+            p.circle(0, 0, rr);
+          }
+          p.pop();
+        }
+
+        function setupOverlay() {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          overlay = p.createGraphics(rect.width, rect.height);
+          overlay.pixelDensity(1);
+        }
+
+        function drawOverlay(time) {
+          if (!showBloom || !overlay) return;
+          overlay.clear();
+          // Radial glow
+          overlay.noStroke();
+          const cx = overlay.width / 2, cy = overlay.height * 0.18;
+          const baseAlpha = 24;
+          for (let r = 360; r > 0; r -= 24) {
+            const a = baseAlpha * (r / 360);
+            overlay.fill(255, 0, 180, a); // magenta glow
+            overlay.ellipse(cx, cy, r * 2.0, r * 0.60);
+          }
+          // Horizon fog band
+          const bandH = overlay.height * 0.18;
+          for (let y = 0; y < bandH; y++) {
+            const t = y / bandH;
+            const a = 60 * (1 - t);
+            overlay.fill(0, 255, 208, a); // cyan haze
+            overlay.rect(0, cy + 40 + y, overlay.width, 1);
+          }
+          // Random star glints
+          overlay.noStroke();
+          for (let i = 0; i < 40; i++) {
+            const x = Math.random() * overlay.width;
+            const y = Math.random() * overlay.height * 0.45;
+            const s = 1 + Math.random() * 2;
+            const alpha = 140 * (Math.sin(time * 2.5 + i) * 0.5 + 0.5);
+            overlay.fill(138, 43, 226, alpha); // neon purple glints
+            overlay.rect(x, y, s, s);
+          }
+
+          // Draw overlay on WEBGL canvas (reset matrix to screen coords)
+          p.push();
+          p.resetMatrix();
+          p.translate(-p.width / 2, -p.height / 2, 0);
+          p.image(overlay, 0, 0);
+          p.pop();
+        }
+
+        function applyLights(time) {
+          if (!showLights) return;
+          p.ambientLight(10, 18, 28); // dark ambient
+          const dirH = Math.sin(time * 0.4) * 0.4 + 0.6;
+          p.directionalLight(120, 60, 180, dirH, -0.6, -0.5); // purple directional
+          const px = Math.sin(time * 0.7) * 600;
+          const pz = Math.cos(time * 0.7) * 600;
+          p.pointLight(0, 255, 208, px, -220, pz); // cyan roaming light
+        }
+
+        function updateCamera() {
+          const ex = Math.cos(camAngleY) * Math.cos(camAngleX) * camDist;
+          const ez = Math.sin(camAngleY) * Math.cos(camAngleX) * camDist;
+          const ey = Math.sin(camAngleX) * camDist * 0.6;
+
+          p.camera(ex, ey, ez, 0, -140, 0, 0, 1, 0);
+          p.perspective(p.PI / 3, p.width / p.height, 1, 5000);
+        }
+
+        p.setup = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.createCanvas(rect.width, rect.height, p.WEBGL);
+          p.setAttributes('antialias', true);
+          regenerateForest();
+          setupOverlay();
+        };
+
+        p.draw = function () {
+          const time = p.millis() * 0.0015;
+
+          p.background(palette.bg);
+          updateCamera();
+          if (showLights) applyLights(time);
+
+          // Ground plane at y=0
+          drawGrid(time);
+
+          // Draw trees
+          if (!paused) {
+            for (const t of forest) t.draw(time);
+          } else {
+            for (const t of forest) t.draw(0); // freeze sway
+          }
+
+          // Sky neon disc
+          drawSkyObjects(time);
+
+          // Bloom overlay
+          drawOverlay(time);
+        };
+
+        p.mouseDragged = function () {
+          const dx = p.movedX || 0;
+          const dy = p.movedY || 0;
+          camAngleY += dx * 0.005;
+          camAngleX += dy * 0.003;
+          camAngleX = p.constrain(camAngleX, -0.9, -0.1);
+        };
+
+        p.mouseWheel = function (e) {
+          camDist += e.delta * 0.6;
+          camDist = p.constrain(camDist, 500, 2000);
+        };
+
+        p.keyPressed = function () {
+          if (p.key === ' ') {
+            paused = !paused;
+          } else if (p.key === 'r' || p.key === 'R') {
+            regenerateForest();
+          } else if (p.key === 'g' || p.key === 'G') {
+            showGrid = !showGrid;
+          } else if (p.key === 'l' || p.key === 'L') {
+            showLights = !showLights;
+          } else if (p.key === 'b' || p.key === 'B') {
+            showBloom = !showBloom;
+          } else if (p.key === 'w' || p.key === 'W') {
+            windIndex = (windIndex + 1) % windDirs.length;
+          }
+        };
+
+        p.windowResized = function () {
+          const container = document.getElementById('canvas-container');
+          const rect = container.getBoundingClientRect();
+          p.resizeCanvas(rect.width, rect.height);
+          setupOverlay();
+        };
+      });
+    })();
+  </script>
+</body>
+</html>
