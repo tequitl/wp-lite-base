@@ -91,6 +91,8 @@ $table_prefix = 'wp_';
  * @link https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/
  */
 define( 'WP_DEBUG', false );
+// Multisite network (paste the exact values WordPress provides after Network Setup)
+define('WP_ALLOW_MULTISITE', true);
 
 /* Add any custom values between this line and the "stop editing" line. */
 
@@ -117,3 +119,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /** Sets up WordPress vars and included files. */
 require_once ABSPATH . 'wp-settings.php';
+
+
+
+

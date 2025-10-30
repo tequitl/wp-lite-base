@@ -5,12 +5,19 @@
 # Any changes to the directives between these markers will be overwritten.
 <IfModule mod_rewrite.c>
 RewriteEngine On
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-RewriteBase /wp-lite-base/
+RewriteBase /
 RewriteRule ^index\.php$ - [L]
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /wp-lite-base/index.php [L]
+
+# Permitir /wp-admin/
+RewriteRule ^wp-admin$ wp-admin/ [R=301,L]
+
+# Si el recurso existe como archivo o carpeta, servirlo directamente
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Enviar el resto a index.php (WordPress Multisite)
+RewriteRule . index.php [L]
 </IfModule>
 
 # END WordPress
