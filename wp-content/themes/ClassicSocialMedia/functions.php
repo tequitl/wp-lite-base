@@ -106,7 +106,7 @@ add_action('wp_ajax_nopriv_csm_load_comments', 'csm_load_comments_ajax');
 //----------------------------------------------------- Theme admin section -------------------------------------------------------//
 
 	$themename = "Classic Social Media";
-	$shortname = "linesh";
+	$shortname = "camarada ilich & linesh";
 	$options = array (	
 
 		array(  "name" => "Header Logo",

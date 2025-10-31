@@ -787,3 +787,115 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 #posts .post ul li, #posts .metadata ul li{
 	display: none;
 }
+
+/* 2011 Facebook-like styles: flatter, less rounded */
+.csm-new-post-card {
+  max-width: 640px;
+  margin: 15px auto;
+  background: #fff;
+  border: 1px solid #d8dfea; /* classic FB gray-blue border */
+  border-radius: 2px;        /* minimal rounding */
+  box-shadow: none;
+  color: #333;
+  font-family: Tahoma, Verdana, Arial, sans-serif;
+}
+
+.csm-np-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f2f2f2;       /* light header */
+  border-bottom: 1px solid #e5e6e9;
+  font-size: 13px;
+  color: #333;
+}
+
+.csm-np-avatar img {
+  border-radius: 2px;        /* avatars were barely rounded */
+  display: block;
+}
+
+.csm-new-post-form {
+  display: block;
+}
+
+.csm-np-body {
+  padding: 10px 12px;
+}
+
+.csm-np-input-title {
+  width: 90%;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid #ccd0d5; /* subtle input border */
+  border-radius: 2px;
+  background: #fff;
+  outline: none;
+  margin-bottom: 10px;
+}
+
+.csm-np-input-content {
+  width: 90%;
+  min-height: 100px;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid #ccd0d5;
+  border-radius: 2px;
+  background: #fff;
+  color: #333;
+  outline: none;
+  resize: vertical;
+}
+
+.csm-np-input-content::placeholder {
+  color: #777;
+}
+
+.csm-np-footer {
+  padding: 8px 12px;
+  background: #f2f2f2;       /* light footer */
+  border-top: 1px solid #e5e6e9;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.csm-np-submit {
+  background: #3b5998;       /* classic FB blue */
+  background-image: linear-gradient(#4c70ba, #3b5998);
+  color: #fff;
+  border: 1px solid #29487d;
+  border-radius: 2px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
+}
+
+.csm-np-submit:hover {
+  background: #4c70ba;
+  background-image: linear-gradient(#5b7ac5, #4c70ba);
+}
+
+.csm-np-submit:active {
+  background: #36538b;
+  background-image: none;
+}
+
+/* Optional: light dark-mode support if the site has dark backgrounds */
+@media (prefers-color-scheme: dark) {
+  .csm-new-post-card {
+    background: #242526;
+    color: #e4e6eb;
+    border-color: #3a3b3c;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .csm-np-header { border-bottom-color: #3a3b3c; }
+  .csm-np-input-title { background: #3a3b3c; color: #e4e6eb; }
+  .csm-np-input-content { background: #242526; color: #e4e6eb; }
+  .csm-np-footer { border-top-color: #3a3b3c; }
+  .csm-np-submit { background: #2374e1; }
+  .csm-np-submit:hover { background: #1d69d8; }
+}

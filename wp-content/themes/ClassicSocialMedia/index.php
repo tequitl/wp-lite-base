@@ -17,14 +17,26 @@
 	<!-- Title -->
 	<h1><?php bloginfo('description'); ?></h1>
 	<!-- end Title -->
-<?php
-if ( have_posts() ) :
-  	while ( have_posts() ) : the_post(); ?>
+	 
+	<!-- add a new post functionality  only avalibre for owner of the account-->
+	<?php if ( is_user_logged_in() && current_user_can('publish_posts') ) : ?>
+	<div class="csm-new-post-card" role="region" aria-label="Create Post">
+		<form method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" class="csm-new-post-form">
+			<?php wp_nonce_field('csm_new_post_action', 'csm_new_post_nonce'); ?>
+			<input type="hidden" name="action" value="csm_new_post">
 
-<?php endwhile;
+			<div class="csm-np-body">
+				<input type="text" id="csm_post_title" name="csm_post_title" class="csm-np-input-title" placeholder="Add a title" required>
+				<textarea id="csm_post_content" name="csm_post_content" class="csm-np-input-content" rows="6" placeholder="What's on your mind, <?php echo esc_html( $current_user->display_name ); ?>?" required></textarea>
+			</div>
 
-endif;
-?>
+			<div class="csm-np-footer">
+				<button type="submit" class="csm-np-submit">Post</button>
+			</div>
+		</form>
+	</div>
+	<?php endif; ?>
+
 	<?php if (have_posts()) : ?>
 	<?php while (have_posts()) : the_post(); ?>
 	<table cellpadding="0" cellspacing="0" class="post <?php the_ID(); ?>">
