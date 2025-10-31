@@ -21,19 +21,20 @@
 	<!-- add a new post functionality  only avalibre for owner of the account-->
 	<?php if ( is_user_logged_in() && current_user_can('publish_posts') ) : ?>
 	<div class="csm-new-post-card" role="region" aria-label="Create Post">
-		<form method="post" action="<?php echo esc_url( admin_url('admin-post.php') ); ?>" class="csm-new-post-form">
-			<?php wp_nonce_field('csm_new_post_action', 'csm_new_post_nonce'); ?>
-			<input type="hidden" name="action" value="csm_new_post">
-
-			<div class="csm-np-body">
-				<input type="text" id="csm_post_title" name="csm_post_title" class="csm-np-input-title" placeholder="Add a title" required>
-				<textarea id="csm_post_content" name="csm_post_content" class="csm-np-input-content" rows="6" placeholder="What's on your mind, <?php echo esc_html( $current_user->display_name ); ?>?" required></textarea>
-			</div>
-
-			<div class="csm-np-footer">
-				<button type="submit" class="csm-np-submit">Post</button>
-			</div>
-		</form>
+	    <form method="post" action="<?php echo esc_url( admin_url('admin-ajax.php') ); ?>" class="csm-new-post-form" id="csm-new-post-form" data-ajax="true">
+	        <?php wp_nonce_field('csm_new_post_action', 'csm_new_post_nonce'); ?>
+	        <input type="hidden" name="action" value="csm_new_post">
+	
+	        <div class="csm-np-body">
+	            <input type="text" id="csm_post_title" name="csm_post_title" class="csm-np-input-title" placeholder="Add a title" required>
+	            <textarea id="csm_post_content" name="csm_post_content" class="csm-np-input-content" rows="6" placeholder="What's on your mind, <?php echo esc_html( $current_user->display_name ); ?>?" required></textarea>
+	        </div>
+	
+	        <div class="csm-np-footer">
+	            <button type="button" class="csm-np-submit" id="csm-np-submit">Post</button>
+	            <div class="csm-np-status" aria-live="polite"></div>
+	        </div>
+	    </form>
 	</div>
 	<?php endif; ?>
 

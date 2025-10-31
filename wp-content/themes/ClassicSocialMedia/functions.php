@@ -592,3 +592,360 @@ function csm_post_comment_ajax() {
 add_action('wp_ajax_csm_post_comment_ajax', 'csm_post_comment_ajax');
 add_action('wp_ajax_nopriv_csm_post_comment_ajax', 'csm_post_comment_ajax');
 ?>
+<?php
+// Enqueue AJAX script for new post creation
+function csm_enqueue_new_post_assets() {
+    wp_enqueue_script(
+        'csm-new-post',
+        get_template_directory_uri() . '/js/new-post.js',
+        array('jquery'),
+        '1.0.0',
+        true
+    );
+
+    wp_localize_script('csm-new-post', 'CSMNewPost', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+    ));
+}
+add_action('wp_enqueue_scripts', 'csm_enqueue_new_post_assets');
+
+// AJAX handler: create a new post (only for users who can publish)
+function csm_new_post_ajax() {
+    check_ajax_referer('csm_new_post_action', 'csm_new_post_nonce');
+
+    if (!is_user_logged_in() || !current_user_can('publish_posts')) {
+        wp_send_json_error(array('message' => 'Not authorized'));
+    }
+
+    $title   = isset($_POST['csm_post_title']) ? sanitize_text_field(wp_unslash($_POST['csm_post_title'])) : '';
+    $content = isset($_POST['csm_post_content']) ? wp_kses_post(wp_unslash($_POST['csm_post_content'])) : '';
+
+    if ($title === '' || $content === '') {
+        wp_send_json_error(array('message' => 'Title and content are required'));
+    }
+
+    $post_id = wp_insert_post(array(
+        'post_title'   => $title,
+        'post_content' => $content,
+        'post_status'  => 'publish',
+        'post_type'    => 'post',
+        'post_author'  => get_current_user_id(),
+    ), true);
+
+    if (is_wp_error($post_id)) {
+        wp_send_json_error(array('message' => $post_id->get_error_message()));
+    }
+
+    wp_send_json_success(array(
+        'message'   => 'Post created',
+        'post_id'   => $post_id,
+        'permalink' => get_permalink($post_id),
+    ));
+}
+add_action('wp_ajax_csm_new_post', 'csm_new_post_ajax');
+add_action('wp_ajax_nopriv_csm_new_post', 'csm_new_post_ajax'); // will still fail due to capability check
+?>
+<?php
+/**
+ * Parse Basic Auth credentials from the incoming request.
+ * Supports PHP_AUTH_USER/PHP_AUTH_PW and HTTP_AUTHORIZATION fallback.
+ */
+function csm_parse_basic_auth() {
+    $username = null;
+    $password = null;
+
+    if (isset($_SERVER['PHP_AUTH_USER'])) {
+        $username = $_SERVER['PHP_AUTH_USER'];
+        $password = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : '';
+        return array($username, $password);
+    }
+
+    // Fallback for setups that pass Authorization header differently
+    $header = null;
+    if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+        $header = $_SERVER['HTTP_AUTHORIZATION'];
+    } elseif (function_exists('apache_request_headers')) {
+        $headers = apache_request_headers();
+        if (isset($headers['Authorization'])) {
+            $header = $headers['Authorization'];
+        }
+    }
+
+    if ($header && stripos($header, 'Basic ') === 0) {
+        $encoded = substr($header, 6);
+        $decoded = base64_decode($encoded);
+        if ($decoded !== false && strpos($decoded, ':') !== false) {
+            list($username, $password) = explode(':', $decoded, 2);
+            return array($username, $password);
+        }
+    }
+
+    return array(null, null);
+}
+
+/**
+ * Check if IP is private/local (same network), including loopback.
+ */
+function csm_is_private_ip($ip) {
+    if (!$ip) return false;
+    if ($ip === '::1') return true; // IPv6 loopback
+
+    // Validate IP
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        return false;
+    }
+
+    // IPv4 ranges: 10/8, 172.16/12, 192.168/16, 127/8
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $long = ip2long($ip);
+        $ranges = array(
+            array(ip2long('10.0.0.0'),       ip2long('10.255.255.255')),
+            array(ip2long('172.16.0.0'),     ip2long('172.31.255.255')),
+            array(ip2long('192.168.0.0'),    ip2long('192.168.255.255')),
+            array(ip2long('127.0.0.0'),      ip2long('127.255.255.255')),
+        );
+        foreach ($ranges as $r) {
+            if ($long >= $r[0] && $long <= $r[1]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Simplistic private check for IPv6: treat unique local fc00::/7 as private if it matches prefix
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        // Unique local addresses (fc00::/7)
+        return (stripos($ip, 'fc') === 0 || stripos($ip, 'fd') === 0);
+    }
+
+    return false;
+}
+
+/**
+ * Ensure request is:
+ * - AJAX (DOING_AJAX and X-Requested-With: XMLHttpRequest)
+ * - From same network (private IP or loopback)
+ * - Properly Basic Authenticated (returns WP_User when ok)
+ *
+ * If any check fails, sends JSON error and exits.
+ */
+function csm_guard_request_and_auth() {
+    // Must be called via admin-ajax.php
+    if (!defined('DOING_AJAX') || !DOING_AJAX) {
+        wp_send_json_error(array('message' => 'AJAX-only endpoint'));
+    }
+
+    // Require X-Requested-With header
+    $xrw = isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? $_SERVER['HTTP_X_REQUESTED_WITH'] : '';
+    if (strcasecmp($xrw, 'XMLHttpRequest') !== 0) {
+        wp_send_json_error(array('message' => 'Not an AJAX request'));
+    }
+
+    // Same network restriction
+    $remote_ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+    if (!csm_is_private_ip($remote_ip)) {
+        wp_send_json_error(array('message' => 'Access restricted to same local network'));
+    }
+
+    // Basic Auth
+    list($username, $password) = csm_parse_basic_auth();
+    if (!$username || $password === null) {
+        wp_send_json_error(array('message' => 'Missing Basic Auth credentials'));
+    }
+
+    // Authenticate using WP
+    $user = wp_authenticate($username, $password);
+    if (is_wp_error($user)) {
+        wp_send_json_error(array('message' => $user->get_error_message()));
+    }
+
+    // Set current user context for capability checks
+    wp_set_current_user($user->ID);
+
+    return $user;
+}
+
+/**
+ * AJAX CRUD endpoint for WordPress posts (owner-only).
+ * Accepts op = get|create|update|delete
+ * Only posts authored by the authenticated user are returned/modified/deleted.
+ *
+ * Params:
+ * - op: string ('get'|'create'|'update'|'delete')
+ * - post_id: int (for get single, update, delete)
+ * - title: string (create/update)
+ * - content: string (create/update)
+ * - paged: int (get list)
+ * - per_page: int (get list, default 10)
+ */
+function csm_posts_crud_ajax() {
+    $user = csm_guard_request_and_auth();
+
+    $op = isset($_REQUEST['op']) ? sanitize_key($_REQUEST['op']) : '';
+
+    switch ($op) {
+        case 'get':
+            $post_id = isset($_REQUEST['post_id']) ? intval($_REQUEST['post_id']) : 0;
+            if ($post_id > 0) {
+                $post = get_post($post_id);
+                if (!$post || $post->post_type !== 'post') {
+                    wp_send_json_error(array('message' => 'Post not found'));
+                }
+                if ((int) $post->post_author !== (int) $user->ID) {
+                    wp_send_json_error(array('message' => 'Not authorized to view this post'));
+                }
+
+                wp_send_json_success(array(
+                    'post' => array(
+                        'id'        => (int) $post->ID,
+                        'title'     => get_the_title($post),
+                        'content'   => $post->post_content,
+                        'status'    => $post->post_status,
+                        'date'      => $post->post_date,
+                        'link'      => get_permalink($post),
+                    ),
+                ));
+            } else {
+                $paged    = isset($_REQUEST['paged']) ? max(1, intval($_REQUEST['paged'])) : 1;
+                $per_page = isset($_REQUEST['per_page']) ? max(1, intval($_REQUEST['per_page'])) : 10;
+
+                $q = new WP_Query(array(
+                    'post_type'      => 'post',
+                    'author'         => $user->ID,
+                    'post_status'    => array('publish', 'draft', 'pending', 'private'),
+                    'paged'          => $paged,
+                    'posts_per_page' => $per_page,
+                    'orderby'        => 'date',
+                    'order'          => 'DESC',
+                    'no_found_rows'  => false,
+                ));
+
+                $items = array();
+                foreach ($q->posts as $p) {
+                    $items[] = array(
+                        'id'      => (int) $p->ID,
+                        'title'   => get_the_title($p),
+                        'status'  => $p->post_status,
+                        'date'    => $p->post_date,
+                        'link'    => get_permalink($p),
+                    );
+                }
+
+                wp_send_json_success(array(
+                    'items'       => $items,
+                    'total'       => (int) $q->found_posts,
+                    'total_pages' => (int) $q->max_num_pages,
+                    'paged'       => $paged,
+                    'per_page'    => $per_page,
+                ));
+            }
+            break;
+
+        case 'create':
+            if (!current_user_can('publish_posts')) {
+                wp_send_json_error(array('message' => 'Not authorized to create posts'));
+            }
+            $title   = isset($_REQUEST['title']) ? sanitize_text_field(wp_unslash($_REQUEST['title'])) : '';
+            $content = isset($_REQUEST['content']) ? wp_kses_post(wp_unslash($_REQUEST['content'])) : '';
+
+            if ($title === '' || $content === '') {
+                wp_send_json_error(array('message' => 'Title and content are required'));
+            }
+
+            $post_id = wp_insert_post(array(
+                'post_title'   => $title,
+                'post_content' => $content,
+                'post_status'  => 'publish',
+                'post_type'    => 'post',
+                'post_author'  => $user->ID,
+            ), true);
+
+            if (is_wp_error($post_id)) {
+                wp_send_json_error(array('message' => $post_id->get_error_message()));
+            }
+
+            wp_send_json_success(array(
+                'message'   => 'Post created',
+                'post_id'   => (int) $post_id,
+                'permalink' => get_permalink($post_id),
+            ));
+            break;
+
+        case 'update':
+            $post_id = isset($_REQUEST['post_id']) ? intval($_REQUEST['post_id']) : 0;
+            if ($post_id <= 0) {
+                wp_send_json_error(array('message' => 'post_id is required'));
+            }
+            $post = get_post($post_id);
+            if (!$post || $post->post_type !== 'post') {
+                wp_send_json_error(array('message' => 'Post not found'));
+            }
+            if ((int) $post->post_author !== (int) $user->ID) {
+                wp_send_json_error(array('message' => 'Not authorized to edit this post'));
+            }
+            if (!current_user_can('edit_post', $post_id)) {
+                wp_send_json_error(array('message' => 'Insufficient capability'));
+            }
+
+            $update = array('ID' => $post_id);
+            $has_changes = false;
+
+            if (isset($_REQUEST['title'])) {
+                $update['post_title'] = sanitize_text_field(wp_unslash($_REQUEST['title']));
+                $has_changes = true;
+            }
+            if (isset($_REQUEST['content'])) {
+                $update['post_content'] = wp_kses_post(wp_unslash($_REQUEST['content']));
+                $has_changes = true;
+            }
+            if (!$has_changes) {
+                wp_send_json_error(array('message' => 'No fields to update'));
+            }
+
+            $result = wp_update_post($update, true);
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => $result->get_error_message()));
+            }
+
+            wp_send_json_success(array(
+                'message' => 'Post updated',
+                'post_id' => (int) $post_id,
+            ));
+            break;
+
+        case 'delete':
+            $post_id = isset($_REQUEST['post_id']) ? intval($_REQUEST['post_id']) : 0;
+            if ($post_id <= 0) {
+                wp_send_json_error(array('message' => 'post_id is required'));
+            }
+            $post = get_post($post_id);
+            if (!$post || $post->post_type !== 'post') {
+                wp_send_json_error(array('message' => 'Post not found'));
+            }
+            if ((int) $post->post_author !== (int) $user->ID) {
+                wp_send_json_error(array('message' => 'Not authorized to delete this post'));
+            }
+            if (!current_user_can('delete_post', $post_id)) {
+                wp_send_json_error(array('message' => 'Insufficient capability'));
+            }
+
+            $trashed = wp_trash_post($post_id);
+            if (!$trashed) {
+                wp_send_json_error(array('message' => 'Unable to trash the post'));
+            }
+
+            wp_send_json_success(array(
+                'message' => 'Post trashed',
+                'post_id' => (int) $post_id,
+            ));
+            break;
+
+        default:
+            wp_send_json_error(array('message' => 'Invalid op. Use get|create|update|delete'));
+    }
+}
+
+// Register AJAX actions for CRUD (allow without cookie; Basic Auth handles auth)
+add_action('wp_ajax_csm_posts_crud', 'csm_posts_crud_ajax');
+add_action('wp_ajax_nopriv_csm_posts_crud', 'csm_posts_crud_ajax');
+?>
