@@ -1,5 +1,5 @@
 <?php /*
-	Function Name: Facebook-like
+	Function Name: ClassicSocialMedia by Camarada Ilich & Linesh
 	URI: http://linesh.com/
 	Description:  Feature-packed theme with a solid design, built-in widgets and a intuitive theme settings interface... Designed by <a href="http://linesh.com/">Linesh Jose</a>.
 	Version: 15.5
@@ -10,9 +10,102 @@
 	Both the design and code are released under GPL.
 	http://www.opensource.org/licenses/gpl-license.php
 */
+
+/**
+ * Enqueue AJAX comments script and expose ajax_url + nonce.
+ */
+function csm_enqueue_comments_assets() {
+    wp_enqueue_script(
+        'csm-mobile-comments',
+        get_template_directory_uri() . '/js/mobile-comments.js',
+        array('jquery'),
+        '1.0.0',
+        true
+    );
+    wp_localize_script('csm-mobile-comments', 'csmComments', array(
+        'ajax_url' => admin_url('admin-ajax.php')
+    ));
+
+    wp_localize_script('csm-mobile-comments', 'CSMComments', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('csm_comments_nonce'),
+    ));
+}
+add_action('wp_enqueue_scripts', 'csm_enqueue_comments_assets');
+
+/**
+ * AJAX endpoint: load comments for a given post ID.
+ */
+function csm_load_comments_ajax() {
+    // Security
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'csm_comments_nonce')) {
+        wp_send_json_error(array('message' => 'Invalid nonce'));
+    }
+
+    $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+    if ($post_id <= 0) {
+        wp_send_json_error(array('message' => 'Invalid post_id'));
+    }
+
+    // Prepare HTML output
+    $post = get_post($post_id);
+    if (!$post) {
+        wp_send_json_error(array('message' => 'Post not found'));
+    }
+
+    // Use output buffering to capture list + form
+    ob_start();
+
+    echo '<div class="csm-comments-list">';
+    $comments = get_comments(array(
+        'post_id' => $post_id,
+        'status'  => 'approve',
+        'orderby' => 'comment_date_gmt',
+        'order'   => 'ASC',
+    ));
+
+    if (!empty($comments)) {
+        wp_list_comments(array(
+            'style'       => 'div',
+            'avatar_size' => 32,
+            'short_ping'  => true,
+            'max_depth'   => 3,
+        ), $comments);
+    } else {
+        echo '<div class="csm-no-comments">No comments yet.</div>';
+    }
+    echo '</div>';
+
+    // Comment form (standard submit, not AJAX)
+    // Comment form (AJAX-ready: id/class, nonce, custom submit button with data-post-id)
+    echo '<div class="csm-comment-form">';
+    comment_form(array(
+        'title_reply'   => __('Leave a comment'),
+        'label_submit'  => __('Submit'),
+        'class_form'    => 'csm-ajax-comment-form',
+        'id_form'       => 'csm-ajax-comment-form-' . $post_id,
+        'comment_field' => '<p class="comment-form-comment">'
+            . '<label for="comment">' . _x('Your Comment', 'noun') . '</label>'
+            . '<textarea id="comment" name="comment" cols="45" rows="6" required></textarea>'
+            . '<input type="hidden" name="nonce" value="' . esc_attr(wp_create_nonce('csm_comments_nonce')) . '">'
+            . '<input type="hidden" name="comment_parent" value="0">'
+            . '<input type="hidden" name="comment_post_ID" value="' . intval($post_id) . '">'
+            . '</p>',
+        // Cambiamos a type="button" para evitar el submit nativo
+        'submit_button' => '<button type="button" class="submit csm-ajax-submit" data-post-id="' . esc_attr($post_id) . '">%4$s</button>',
+        'submit_field'  => '<p class="form-submit">%1$s %2$s</p>',
+    ), $post_id);
+    echo '</div>';
+
+    $html = ob_get_clean();
+
+    wp_send_json_success(array('html' => $html));
+}
+add_action('wp_ajax_csm_load_comments', 'csm_load_comments_ajax');
+add_action('wp_ajax_nopriv_csm_load_comments', 'csm_load_comments_ajax');
 //----------------------------------------------------- Theme admin section -------------------------------------------------------//
 
-	$themename = "Facebook-like";
+	$themename = "Classic Social Media";
 	$shortname = "linesh";
 	$options = array (	
 
@@ -375,4 +468,127 @@ function hide_admin_bar_updates() {
 }
 add_action('wp_before_admin_bar_render', 'hide_admin_bar_updates');
 
+?>
+<?php
+/**
+ * AJAX endpoint: submit a comment for a given post.
+ * Expects: nonce, post_id, comment, (optional) comment_parent,
+ *          and for guests: author, email, url
+ * Returns: JSON with new comment HTML (if approved), id, count, and status.
+ */
+function csm_post_comment_ajax() {
+    // Security check (nonce passed from wp_localize_script)
+    check_ajax_referer('csm_comments_nonce', 'nonce');
+
+    $post_id         = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+    $comment_content = isset($_POST['comment']) ? trim(wp_unslash($_POST['comment'])) : '';
+    $comment_parent  = isset($_POST['comment_parent']) ? absint($_POST['comment_parent']) : 0;
+    // Accept both 'post_id' and 'comment_post_ID'
+    $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+    if (!$post_id && isset($_POST['comment_post_ID'])) {
+        $post_id = intval($_POST['comment_post_ID']);
+    }
+
+    if ($post_id <= 0 || !get_post($post_id)) {
+        wp_send_json_error(array('message' => 'Invalid post_id'));
+    }
+    if ('open' !== get_post_field('comment_status', $post_id)) {
+        wp_send_json_error(array('message' => 'Comments are closed for this post'));
+    }
+    if ($comment_content == '') {
+        wp_send_json_error(array('message' => 'Comment content is required'));
+    }
+
+    $user = wp_get_current_user();
+    $comment_data = array(
+        'comment_post_ID'      => $post_id,
+        // Claves correctas para WP core:
+        'comment'              => $comment_content,
+        // Mantener también para compatibilidad con el fallback:
+        'comment_content'      => $comment_content,
+        'comment_parent'       => $comment_parent,
+        'comment_type'         => '',
+        'comment_author_IP'    => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '',
+        'comment_agent'        => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '',
+    );
+
+    if ($user && $user->exists()) {
+        // Usuario logueado
+        $comment_data['user_id']               = $user->ID;
+
+        // Suministrar también las claves esperadas por wp_handle_comment_submission:
+        $comment_data['author']                = $user->display_name ? $user->display_name : $user->user_login;
+        $comment_data['email']                 = $user->user_email;
+        $comment_data['url']                   = $user->user_url;
+
+        // Mantener compatibilidad con wp_new_comment en fallback:
+        $comment_data['comment_author']        = $comment_data['author'];
+        $comment_data['comment_author_email']  = $comment_data['email'];
+        $comment_data['comment_author_url']    = $comment_data['url'];
+    } else {
+        // Invitado debe proporcionar author + email
+        $author = isset($_POST['author']) ? sanitize_text_field(wp_unslash($_POST['author'])) : '';
+        $email  = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
+        $url    = isset($_POST['url']) ? esc_url_raw(wp_unslash($_POST['url'])) : '';
+
+        if ($author === '' || $email === '') {
+            wp_send_json_error(array('message' => 'Name and email are required for guest comments'));
+        }
+        if (!is_email($email)) {
+            wp_send_json_error(array('message' => 'Invalid email address'));
+        }
+
+        // Claves correctas para wp_handle_comment_submission:
+        $comment_data['author']                = $author;
+        $comment_data['email']                 = $email;
+        $comment_data['url']                   = $url;
+
+        // Compatibilidad con wp_new_comment en fallback:
+        $comment_data['comment_author']        = $author;
+        $comment_data['comment_author_email']  = $email;
+        $comment_data['comment_author_url']    = $url;
+    }
+
+    if (function_exists('wp_handle_comment_submission')) {
+        $result = wp_handle_comment_submission($comment_data, true);
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+        $comment = $result;
+    } else {
+        // Fallback for very old WP versions
+        $comment_id = wp_new_comment(wp_filter_comment($comment_data));
+        if (is_wp_error($comment_id) || !$comment_id) {
+            wp_send_json_error(array('message' => 'Failed to create comment'));
+        }
+        $comment = get_comment($comment_id);
+    }
+
+    // Set commenter cookies (matches core behavior)
+    do_action('set_comment_cookies', $comment, $user);
+
+    // Prepare a small HTML snippet of the new comment (if approved)
+    ob_start();
+    wp_list_comments(
+        array(
+            'style'       => 'div',
+            'avatar_size' => 32,
+            'short_ping'  => true,
+            'max_depth'   => 3,
+        ),
+        array($comment)
+    );
+    $comment_html = ob_get_clean();
+
+    wp_send_json_success(array(
+        'message'     => 'Comment submitted',
+        'comment_id'  => (int) $comment->comment_ID,
+        'status'      => (string) $comment->comment_approved, // '0' pending moderation, '1' approved
+        'count'       => (int) get_comments_number($post_id),
+        'html'        => $comment_html, // empty if pending and your callback hides it
+    ));
+}
+// Register AJAX actions for comment submit
+add_action('wp_ajax_csm_post_comment_ajax', 'csm_post_comment_ajax');
+add_action('wp_ajax_nopriv_csm_post_comment_ajax', 'csm_post_comment_ajax');
 ?>

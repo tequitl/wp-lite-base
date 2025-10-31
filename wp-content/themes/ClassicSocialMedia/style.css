@@ -783,3 +783,7 @@ input[type=checkbox], input[type=text], input[type=password], textarea, select, 
 #footer a {
 	font-size: 11px;
 }
+
+#posts .post ul li, #posts .metadata ul li{
+	display: none;
+}

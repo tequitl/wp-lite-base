@@ -1,0 +1,385 @@
+/* Mobile dark (gray/black) theme inspired by early mobile Facebook */
+/* Loaded only on small screens via media="only screen and (max-width: 640px)" */
+
+/* Base mobile styles */
+html, body {
+  background: #111;
+  color: #e6e6e6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;           /* slightly smaller base */
+  line-height: 1.35;         /* tighter */
+  margin: 0;
+  padding: 0;
+}
+/* Spacing and sizing system */
+* { box-sizing: border-box; }
+:root {
+  --space-1: 6px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --radius: 10px;
+  --bg: #111;
+  --card: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #e6e6e6;
+  --muted: #c0c0c0;
+  /* Slightly tighter global scale for mobile */
+  --scale: 0.85;
+}
+
+/* Layout container: full width */
+div#container {
+  width: 100%;
+  max-width: 100%;           /* force full width on mobile */
+  margin: 0 auto;
+  padding: calc(var(--space-2) * var(--scale));
+}
+
+table, tr, td {
+  display: block;
+  width: 100%;
+  border: 0;
+}
+
+#leftbar {
+  display: none;
+}
+
+#rightbar {
+  width: 100%;
+  padding: 0;
+}
+
+/* Top bar mimicking early mobile header */
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #1a1a1a;
+  border-bottom: 1px solid var(--border);
+  padding: calc(var(--space-2) * var(--scale));
+}
+
+/* Search: align inputs and ensure tappable sizes */
+.search {
+  padding: calc(var(--space-2) * var(--scale));
+  background: #1a1a1a;
+}
+.search form {
+  display: flex;
+  gap: calc(var(--space-1) * var(--scale));
+}
+.searchtextbox,
+input[type="text"],
+input[type="search"] {
+  flex: 1;
+  min-height: calc(34px * var(--scale));
+  padding: calc(8px * var(--scale));
+  background: #333;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 6px;
+}
+input[type="image"].searchbutton {
+  width: calc(34px * var(--scale));
+  height: calc(34px * var(--scale));
+  border: 1px solid #444;
+  background: #2a2a2a;
+  border-radius: 6px;
+}
+
+/* Menu: consistent grid of buttons */
+.menu {
+  background: #1a1a1a;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.menu ul.qmmc {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc(var(--space-1) * var(--scale));
+  padding: calc(var(--space-2) * var(--scale));
+  margin: 0;
+}
+.menu ul.qmmc > li { list-style: none; }
+.menu ul.qmmc > li > a {
+  display: block;
+  text-align: center;
+  min-height: calc(32px * var(--scale));
+  line-height: calc(32px * var(--scale));
+  padding: 0 calc(var(--space-2) * var(--scale));
+  background: #222;
+  color: #ddd;
+  border: 1px solid #333;
+  border-radius: 8px;
+}
+.menu ul.qmmc > li > a:hover {
+  background: #2a2a2a;
+  color: #fff;
+  text-decoration: none;
+}
+.menu ul.qmmc > li ul { display: none; }
+
+/* Content */
+#content {
+  padding: calc(var(--space-2) * var(--scale));
+  margin: 0;
+  border: 0;        /* override desktop border */
+  width: 100%;
+}
+
+/* Cards */
+.widget,
+.post,
+.entry,
+.comment,
+#comments {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 0 0 calc(var(--space-2) * var(--scale));
+  padding: calc(var(--space-2) * var(--scale));
+}
+
+/* Text */
+h1 { font-size: calc(18px * var(--scale)); margin: calc(var(--space-2) * var(--scale)) 0 calc(var(--space-1) * var(--scale)); color: #eee; }
+h2 { font-size: calc(16px * var(--scale)); margin: calc(var(--space-2) * var(--scale)) 0 calc(var(--space-1) * var(--scale)); color: #eee; }
+h3 { font-size: calc(15px * var(--scale)); margin: calc(var(--space-2) * var(--scale)) 0 calc(var(--space-1) * var(--scale)); color: #eee; }
+p, li, dt, dd { color: #d0d0d0; margin: 0 0 calc(var(--space-1) * var(--scale)); }
+
+/* User info + avatars */
+#rightbar .userinfo {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--space-2) * var(--scale));
+}
+#rightbar .userinfo img,
+.comment img {
+  width: calc(28px * var(--scale));
+  height: calc(28px * var(--scale));
+  border-radius: 50%;
+  background: #333;
+  border: 1px solid #444;
+}
+
+/* Comments list */
+ol.commentlist,
+ul.commentlist {
+  padding: 0;
+  margin: 0;
+}
+.commentlist li {
+  list-style: none;
+  margin: 0 0 calc(var(--space-2) * var(--scale));
+  padding: calc(var(--space-2) * var(--scale));
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Buttons */
+input[type=submit],
+input[type=button],
+input[type=reset],
+.button {
+  font-size: calc(13px * var(--scale));
+  font-weight: 600;
+  min-height: calc(32px * var(--scale));
+  padding: calc(8px * var(--scale)) calc(12px * var(--scale));
+  border: 1px solid #444;
+  color: #eee;
+  background: #2a2a2a;
+  border-radius: 8px;
+}
+input[type=submit]:hover,
+input[type=button]:hover,
+input[type=reset]:hover,
+.button:hover {
+  background: #333;
+  cursor: pointer;
+}
+
+/* Images/tables */
+img, video, iframe { max-width: 100%; height: auto; border: 0; }
+#content table { width: 100%; table-layout: fixed; }
+#rightbar .top table { display: none; }
+
+/* Utility */
+.alignleft, .alignright { float: none; }
+.centertext { text-align: center; }
+.clearboth { clear: both; }
+
+/* #posts mobile sizing */
+#posts {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 var(--space-2);
+}
+
+#posts .post {
+  width: 100%;
+  box-sizing: border-box;
+  background: #151515;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  margin: var(--space-2) 0;
+  padding: calc(10px * var(--scale, 1));
+  font-size: 12px;
+  box-shadow: 0 1px 0 #0e0e0e inset;
+  border-bottom: 1px solid #E9E9E9;
+  text-align: left;
+}
+
+#posts .post h2, 
+#posts .post h3, 
+#posts .post .title {
+  font-size: 13px;
+  margin: 4px 0 6px;
+  color: #e6e6e6;
+}
+
+#posts .post img,
+#posts .post iframe,
+#posts .post embed {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Comments: force fit to screen on mobile */
+#comments,
+#respond,
+.comment-form {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: var(--space-2);
+  box-sizing: border-box;
+}
+
+/* AJAX comments block */
+#commentform table {
+  display: block;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+#commentform table tbody,
+#commentform table tr,
+#commentform table th,
+#commentform table td {
+  display: block;
+  width: 100% !important;
+  padding: 0 0 var(--space-2) 0;
+  box-sizing: border-box;
+}
+
+/* Inputs and textarea: full-width and readable to prevent auto-zoom */
+#comments textarea,
+#respond textarea,
+#commentform textarea,
+#commentform input[type="text"],
+#commentform input[type="email"],
+#commentform input[type="url"],
+#commentform input[type="password"] {
+  width: 100% !important;
+  max-width: 100%;
+  font-size: 16px;        /* prevents mobile focus auto-zoom */
+  line-height: 1.35;
+  padding: calc(var(--space-2) * var(--scale, 1));
+  border: 1px solid #3a3a3a;
+  background: #1c1c1c;
+  color: #e6e6e6;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* Labels and submit: compact and consistent */
+#commentform label {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 12px;
+}
+#commentform input[type="submit"] {
+  font-size: 16px;
+  height: calc(36px * var(--scale, 1));
+  padding: 0 calc(var(--space-2) * var(--scale, 1));
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: #fff;
+  border: 1px solid #3a3a3a;
+}
+
+/* Keep images and embeds in comments fluid */
+#comments img,
+#comments iframe,
+#comments embed {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevent horizontal overflow just in case */
+html, body, #container, #posts, #comments {
+  overflow-x: hidden;
+}
+
+/* Sidebar off on mobile; timeline is full-width */
+#left-sidebar, 
+#sidebar, 
+.rightcol {
+  display: none !important;
+}
+
+/* Prevent overflow */
+#content, 
+#container, 
+#posts {
+  max-width: 100%;
+}
+
+#posts .post img, 
+#posts .post iframe, 
+#posts .post embed {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Admin bar: fixed to bottom on mobile */
+:root {
+  /* Height is ~46px on mobile; adjust if your bar differs */
+  --adminbar-height: 46px;
+}
+
+/* Move admin bar to bottom and make it full-width */
+#wpadminbar {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 10000; /* above content */
+  transform: translate3d(0, 0, 0);
+}
+
+/* Dropdowns should open upward when bar is at the bottom */
+#wpadminbar .ab-sub-wrapper {
+  top: auto !important;
+  bottom: var(--adminbar-height);
+}
+
+/* Prevent overlap: add bottom padding only when admin bar is present */
+body.admin-bar {
+  margin-top: 0 !important; /* cancel WP's default margin-top */
+  padding-bottom: calc(var(--adminbar-height) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Ensure main containers honor the bottom padding */
+#container,
+#content,
+#posts {
+  padding-bottom: calc(var(--adminbar-height) + env(safe-area-inset-bottom, 0px));
+}

@@ -17,6 +17,14 @@
 	<!-- Title -->
 	<h1><?php bloginfo('description'); ?></h1>
 	<!-- end Title -->
+<?php
+if ( have_posts() ) :
+  	while ( have_posts() ) : the_post(); ?>
+
+<?php endwhile;
+
+endif;
+?>
 	<?php if (have_posts()) : ?>
 	<?php while (have_posts()) : the_post(); ?>
 	<table cellpadding="0" cellspacing="0" class="post <?php the_ID(); ?>">
@@ -54,6 +62,15 @@
 			</td>
 		</tr>
 	</table>
+	<div class="post">
+      <div class="post-meta">
+        <!-- Replace the old <li class="comment"><a href="...">Comments</a></li> with this -->
+        <section class="csm-comments-block">
+          <a href="#" class="csm-comments-toggle" data-post-id="<?php the_ID(); ?>" role="button">Comments</a>
+          <div class="csm-comments-container" id="csm-comments-<?php the_ID(); ?>" style="display:none;"></div>
+        </section>
+      </div>
+    </div>
 	<?php endwhile; ?>
 
 	<!-- Navigation starts -->
