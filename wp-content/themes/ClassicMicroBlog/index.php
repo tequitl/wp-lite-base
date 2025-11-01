@@ -12,17 +12,15 @@
   <!-- Left Sidebar -->
   <aside class="sidebar">
     <nav class="nav">
-    
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>Home</span></a>
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>Explore</span></a>
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>Notifications</span></a>
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>Messages</span></a>
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>Grok</span></a>
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>Communities</span></a>
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>Profile</span></a>
-      <a class="nav-item" href="<?php echo esc_url(home_url('/')); ?>"><span>More</span></a>
+        <?php
+        //list all wordpress pages
+        $pages = get_pages();
+        foreach ($pages as $page) {
+            echo '<a class="nav-item" href="' . esc_url(get_permalink($page->ID)) . '"><span>' . esc_html($page->post_title) . '</span></a>';
+        }
+        ?>
     </nav>
-    <button class="btn post-button">Post</button>
+    <button class="btn post-button" onclick="window.ClassicMicroBlogOpenComposer && window.ClassicMicroBlogOpenComposer()">Post</button>
     <div class="mini-profile">
       <div class="mini-avatar"><?php echo esc_html($initial); ?></div>
       <div>
@@ -59,8 +57,54 @@
 
     <!-- Vue App: Timeline and owner-only panel -->
     <div id="app">
+        <!-- Modal Composer -->
+        <div v-if="composerOpen" class="modal-backdrop" style="position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000;">
+            <div class="card" style="width:600px; max-width:90%; border-radius:12px; background:#fff; padding:16px; position:relative;">
+                <button class="btn secondary" @click="closeComposer" style="position:absolute; top:8px; left:8px;">✕</button>
+                <p></p>
+                <input class="input" v-model="owner.newTitle" placeholder="Title (optional)">
+                <textarea class="input" rows="4" v-model="owner.newContent" placeholder="What’s happening?"></textarea>
+    
+                <div class="actions" style="margin-top:8px;">
+                    <button class="btn" :disabled="owner.loading || !owner.newContent" @click="createOwnerPost">Post</button>
+                </div>
+                <div v-if="owner.loading" class="muted" style="margin-top:8px;">Posting...</div>
+                <div v-if="owner.error" class="error" style="margin-top:8px;">{{ owner.error }}</div>
+            </div>
+        </div>
+    
+        <!-- Modal overlay: only close when clicking the overlay itself -->
+        <div v-if="composerOpen" class="cmb-modal-overlay" @click.self="closeComposer">
+            <div class="cmb-modal" @click.stop>
+                <button class="btn secondary" @click="closeComposer" style="position:absolute; top:8px; left:8px;">✕</button>
+            <input class="input" v-model="owner.newTitle" placeholder="Title (optional)">
+                <textarea class="input" rows="4" v-model="owner.newContent" placeholder="What’s happening?"></textarea>
+    
+                <div class="actions" style="margin-top:8px;">
+                    <button class="btn" :disabled="owner.loading || !owner.newContent" @click="createOwnerPost">Post</button>
+                </div>
+                <div v-if="owner.loading" class="muted" style="margin-top:8px;">Posting...</div>
+                <div v-if="owner.error" class="error" style="margin-top:8px;">{{ owner.error }}</div>
+            </div>
+        </div>
+
       <!-- Timeline -->
+    <!-- add section a new post in case is owner-->
       <section>
+        <div class="card">
+          <div class="post-title">What’s happening?</div>
+          <input class="input" v-model="owner.newTitle" placeholder="Title (optional)">
+          <textarea class="input" rows="3" v-model="owner.newContent" placeholder="What’s happening?"></textarea>
+          <div class="actions">
+            <button class="btn"  @click="createOwnerPost">Post</button>
+          </div>
+          <div v-if="owner.loading" class="muted">Posting...</div>
+          <div v-if="owner.error" class="error">{{ owner.error }}</div>
+          <div v-if="owner.created" class="muted">
+            Posted!
+          </div>
+        </div>
+
         <div class="card">
           <div class="post-title">Timeline</div>
           <div class="muted">Fetching published posts from WP REST API</div>
@@ -85,39 +129,6 @@
           <button class="btn secondary" :disabled="timeline.page<=1 || timeline.loading" @click="prevPage">Prev</button>
           <button class="btn" :disabled="timeline.loading" @click="nextPage">Next</button>
           <span class="muted">Page {{ timeline.page }}</span>
-        </div>
-      </section>
-
-      <!-- Owner-only (AJAX Basic Auth) -->
-      <section>
-        <div class="card">
-          <div class="post-title">Owner-only Post (AJAX)</div>
-          <div class="muted">Requires Basic Auth and same-network. Uses action=csm_posts_crud, op=get, post_id.</div>
-          <div class="muted">Enter your WP username & password below to authenticate.</div>
-
-          <label class="muted">Username</label>
-          <input class="input" v-model="owner.username" placeholder="wp_username">
-
-          <label class="muted">Password</label>
-          <input class="input" type="password" v-model="owner.password" placeholder="wp_password">
-
-          <label class="muted">Post ID</label>
-          <input class="input" v-model.number="owner.postId" placeholder="123">
-
-          <div class="actions">
-            <button class="btn" :disabled="owner.loading" @click="fetchOwnerPost">Fetch Post</button>
-          </div>
-
-          <div v-if="owner.loading" class="muted">Loading...</div>
-          <div v-if="owner.error" class="error">{{ owner.error }}</div>
-          <div v-if="owner.post" class="card" style="margin-top:8px;">
-            <div class="post-title">{{ owner.post.title }}</div>
-            <div class="post-meta">Status: {{ owner.post.status }} · {{ owner.post.date }}</div>
-            <div v-html="owner.post.content"></div>
-            <div class="actions">
-              <a class="btn secondary" :href="owner.post.link" target="_blank" rel="noopener">Open</a>
-            </div>
-          </div>
         </div>
       </section>
     </div>
@@ -175,4 +186,3 @@
 </div>
 
 <?php get_footer(); ?>
-// ... existing code ...

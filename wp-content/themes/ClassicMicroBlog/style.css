@@ -342,6 +342,85 @@ body {
   .sidebar { display: none; }
 }
 
+/* Single Post Styles */
+.post-tags .tag {
+  display: inline-block;
+  background: var(--bg);
+  color: var(--primary);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--border);
+}
+
+.post-tags .tag:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.nav-link:hover {
+  color: var(--primary);
+}
+
+/* Comments specific styles */
+.post-comments .card {
+  margin-bottom: 12px;
+}
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.comment-item {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.comment-item:first-child {
+  border-top: none;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.comment-author {
+  font-weight: 600;
+}
+
+.comment-content {
+  line-height: 1.5;
+}
+
+.comment-content p {
+  margin: 0 0 8px 0;
+}
+
+.comment-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* No comments message */
+.no-comments {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+  font-style: italic;
+}
+
 /* ---- Page Template Styles ---- */
 
 .page-header .page-title {

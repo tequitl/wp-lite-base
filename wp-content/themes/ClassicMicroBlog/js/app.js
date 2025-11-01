@@ -1,6 +1,7 @@
+// Top-level app mounting and global opener
 const { createApp } = Vue;
 
-createApp({
+const app = createApp({
   data() {
     return {
       timeline: {
@@ -17,7 +18,11 @@ createApp({
         loading: false,
         error: null,
         post: null,
-      }
+        newTitle: '',
+        newContent: '',
+        created: null,
+      },
+      composerOpen: false, // modal visibility
     };
   },
 
@@ -65,6 +70,65 @@ createApp({
       }
     },
 
+    openComposer() { this.composerOpen = true; },
+    closeComposer() { this.composerOpen = false; },
+    async createOwnerPost() {
+      this.owner.loading = true;
+      this.owner.error = null;
+      this.owner.created = null;
+
+      if (!this.owner.newContent) {
+        this.owner.error = 'Content is required';
+        this.owner.loading = false;
+        return;
+      }
+
+      try {
+        const computedTitle = this.owner.newTitle && this.owner.newTitle.trim() !== ''
+          ? this.owner.newTitle.trim()
+          : (this.owner.newContent || '').trim().slice(0, 60);
+
+        const body = new URLSearchParams({
+          action: 'cmb_create_post_ajax',
+          title: computedTitle,
+          content: this.owner.newContent,
+        });
+
+        const headers = {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        };
+
+        const res = await fetch(ClassicMicroBlog.adminAjaxUrl, {
+          method: 'POST',
+          headers,
+          body: body.toString(),
+          credentials: 'same-origin',
+        });
+
+        const json = await res.json();
+
+        if (!json || json.success !== true) {
+          console.log(json);
+          const msg = (json && json.data && json.data.message) ? json.data.message : `AJAX error ${res.status}`;
+          throw new Error(msg);
+        }
+
+        this.owner.created = {
+          postId: json.data.post_id,
+          permalink: json.data.permalink,
+        };
+        this.owner.newTitle = '';
+        this.owner.newContent = '';
+        this.loadTimeline();
+        this.closeComposer(); // close modal on success
+      } catch (e) {
+        this.owner.error = e.message || String(e);
+      } finally {
+        this.owner.loading = false;
+      }
+    },
     async fetchOwnerPost() {
       this.owner.loading = true;
       this.owner.error = null;
@@ -114,4 +178,14 @@ createApp({
       }
     },
   }
-}).mount('#app');
+});
+const vm = app.mount('#app');
+
+// Global opener: prevent default + stop propagation, then open
+window.ClassicMicroBlogOpenComposer = (e) => {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  vm.composerOpen = true;
+};
