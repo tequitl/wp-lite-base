@@ -50,7 +50,12 @@ const app = createApp({
         // Optional: augment with author names via embedded data if available
         // If you want author names, you can add `_embed=author` query or do a second fetch.
         this.timeline.items = Array.isArray(data) ? data : [];
-
+        // Initialize UI-only counters and states
+        this.timeline.items = this.timeline.items.map(d => ({
+          ...d,
+          _counts: d._counts || { comments: 0, likes: 0, views: 0 },
+          _liked: !!d._liked,
+        }));
       } catch (e) {
         this.timeline.error = e.message || String(e);
       } finally {
@@ -177,6 +182,12 @@ const app = createApp({
         this.owner.loading = false;
       }
     },
+    toggleLike(post) {
+      if (!post._counts) post._counts = { comments: 0, likes: 0, views: 0 };
+      post._liked = !post._liked;
+      const delta = post._liked ? 1 : -1;
+      post._counts.likes = Math.max(0, (post._counts.likes || 0) + delta);
+    }
   }
 });
 const vm = app.mount('#app');

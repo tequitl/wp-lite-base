@@ -51,6 +51,13 @@ function classicmicroblog_enqueue_assets() {
             'requireNameEmail' => get_option('require_name_email', 1),
         ));
     }
+    // Icon font for Vue-friendly action icons
+    wp_enqueue_style(
+        'material-symbols-outlined',
+        'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap',
+        [],
+        null
+    );
 }
 add_action('wp_enqueue_scripts', 'classicmicroblog_enqueue_assets');
 

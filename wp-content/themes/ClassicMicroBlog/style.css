@@ -535,6 +535,76 @@ body {
   background: #e8f5fe;
 }
 
+/* Icon actions row */
+.icon-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.icon-action:hover {
+  background: #e8f5fe;
+  color: var(--primary);
+}
+
+.icon-action[aria-pressed="true"] {
+  color: var(--primary);
+}
+
+.icon-action .count {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Vue-friendly icon font (Material Symbols Outlined) */
+.ms-icon {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px; /* adjust size */
+  line-height: 1;
+  display: inline-block;
+  /* variable font settings: outlined by default */
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* Filled heart when liked */
+.icon-action[aria-pressed="true"] .ms-icon {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 700,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.icon-action svg {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-action .count {
+  font-weight: 600;
+  font-size: 13px;
+}
+
 @media (max-width: 1024px) {
   .layout { grid-template-columns: 90px 1fr; }
   .rightbar { display: none; }

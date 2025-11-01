@@ -37,7 +37,7 @@
       <div class="cover"></div>
       <div class="profile-row">
         <div class="profile-avatar"><?php echo esc_html($initial); ?></div>
-        <button class="edit-profile">Edit profile</button>
+        <a class="edit-profile" href="<?php echo esc_url( admin_url('profile.php') ); ?>">Edit profile</a>
       </div>
       <div class="profile-info">
         <h1><?php echo esc_html($display_name); ?> <span class="badge">Get verified</span></h1>
@@ -120,8 +120,19 @@
             <span>{{ new Date(p.date).toLocaleString() }}</span>
           </div>
           <div v-html="p.excerpt.rendered"></div>
-          <div class="actions">
-            <a class="btn secondary" :href="p.link" target="_blank" rel="noopener">Open</a>
+          <div class="icon-actions">
+            <a class="icon-action" :href="p.link + '#comments'" title="Comments">
+              <span class="ms-icon" aria-hidden="true">mode_comment</span>
+              <span class="count">{{ (p._counts && p._counts.comments) || '0' }}</span>
+            </a>
+            <button class="icon-action" @click="toggleLike(p)" :aria-pressed="p._liked" title="Like">
+              <span class="ms-icon" aria-hidden="true">favorite</span>
+              <span class="count">{{ (p._counts && p._counts.likes) || '0' }}</span>
+            </button>
+            <a class="icon-action" :href="p.link" title="Views">
+              <span class="ms-icon" aria-hidden="true">bar_chart</span>
+              <span class="count">{{ (p._counts && p._counts.views) || '0' }}</span>
+            </a>
           </div>
         </div>
 
