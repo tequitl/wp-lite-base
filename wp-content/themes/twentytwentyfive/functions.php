@@ -27,7 +27,7 @@ function classicmicroblog_enqueue_assets() {
     // Pass API URLs to JS
     wp_localize_script('classicmicroblog-app', 'ClassicMicroBlog', array(
         'restPostsUrl'   => rest_url('wp/v2/posts'),
-        'adminAjaxUrl'   => admin_url('admin-ajax.php'),
+        'adminAjaxUrl'   => network_site_url('/wp-admin/admin-ajax.php'),
         'siteUrl'        => home_url('/'),
         'defaultPerPage' => 10,
     ));
@@ -307,3 +307,37 @@ function cmb_create_post_ajax() {
 }
 add_action('wp_ajax_cmb_create_post_ajax', 'cmb_create_post_ajax');
 add_action('wp_ajax_nopriv_cmb_create_post_ajax', 'cmb_create_post_ajax');
+
+// Ensure subsite uploads use /wp-content/uploads/sites/{blog_id}
+function classicmicroblog_fix_multisite_upload_dir($dirs) {
+    if (is_multisite()) {
+        global $blog_id;
+        $hasSitesSegment = (strpos($dirs['baseurl'], '/sites/') !== false);
+        if (!$hasSitesSegment) {
+            $dirs['baseurl'] = site_url('/wp-content/uploads/sites/' . $blog_id);
+            $dirs['basedir'] = WP_CONTENT_DIR . '/uploads/sites/' . $blog_id;
+        }
+    }
+    return $dirs;
+}
+add_filter('upload_dir', 'classicmicroblog_fix_multisite_upload_dir');
+
+// Ensure subsite assets load from root wp-* paths
+function classicmicroblog_fix_asset_src($src) {
+    if (is_multisite() && !empty($src)) {
+        $path  = parse_url($src, PHP_URL_PATH);
+        $query = parse_url($src, PHP_URL_QUERY);
+        if (preg_match('#^/[_0-9a-zA-Z-]+/(wp-(?:content|includes|admin)/.+)$#', $path, $m)) {
+            $scheme = is_ssl() ? 'https' : 'http';
+            $host   = $_SERVER['HTTP_HOST'];
+            $new    = $scheme . '://' . $host . '/' . $m[1];
+            if ($query) {
+                $new .= '?' . $query;
+            }
+            return $new;
+        }
+    }
+    return $src;
+}
+add_filter('script_loader_src', 'classicmicroblog_fix_asset_src', 10);
+add_filter('style_loader_src', 'classicmicroblog_fix_asset_src', 10);

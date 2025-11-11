@@ -110,6 +110,13 @@ function get_clean_basedomain() {
  *
  * @param false|WP_Error $errors Optional. Error object. Default false.
  */
+function apply_exceptions( $exception, $array ) {
+	//if sqlite-database-integration/load.php remove from array
+	if ( 'sqlite-database-integration/load.php' === $exception ) {
+		$array = array_diff( $array, array( $exception ) );
+	}
+	return $array;
+}
 function network_step1( $errors = false ) {
 	global $is_apache;
 
@@ -134,6 +141,8 @@ function network_step1( $errors = false ) {
 	}
 
 	$active_plugins = get_option( 'active_plugins' );
+	$active_plugins = apply_exceptions( 'sqlite-database-integration/load.php',$active_plugins );
+
 	if ( ! empty( $active_plugins ) ) {
 		wp_admin_notice(
 			'<strong>' . __( 'Warning:' ) . '</strong> ' . sprintf(

@@ -93,6 +93,12 @@ $table_prefix = 'wp_';
 define( 'WP_DEBUG', false );
 // Multisite network (paste the exact values WordPress provides after Network Setup)
 define('WP_ALLOW_MULTISITE', true);
+define( 'MULTISITE', true );
+define( 'SUBDOMAIN_INSTALL', false );
+define( 'DOMAIN_CURRENT_SITE', 'ccez.ngrok.io' );
+define( 'PATH_CURRENT_SITE', '/' );
+define( 'SITE_ID_CURRENT_SITE', 1 );
+define( 'BLOG_ID_CURRENT_SITE', 1 );
 
 /* Add any custom values between this line and the "stop editing" line. */
 

@@ -1,0 +1,186 @@
+/* Dark theme overrides for ClassicMicroBlog
+   - Intended to be loaded after style.css to override colors
+   - Uses the same CSS variables so the theme keeps working consistently
+*/
+
+/* Base dark palette */
+:root {
+  /* Core surface and text colors */
+  --bg: #0f1419;         /* page background */
+  --card: #141a21;       /* card background */
+  --text: #e6edf3;       /* primary text */
+  --muted: #9aa6b2;      /* secondary text */
+  --border: #26323a;     /* borders */
+
+  /* Primary brand color (keeps admin scheme if present) */
+  /* If you are using admin scheme injection, you can keep this dynamic.
+     Otherwise, uncomment a preferred dark blue.
+     --primary: #1d9bf0; */
+  --primary: var(--primary, #1d9bf0);
+
+  /* Optional: keep admin scheme variables if injected by PHP */
+  --admin-primary: var(--admin-primary, var(--primary));
+  --admin-secondary: var(--admin-secondary, #0b6aa8);
+  --admin-accent: var(--admin-accent, #0ea5e9);
+  --admin-highlight: var(--admin-highlight, #38bdf8);
+  --admin-notification: var(--admin-notification, #ef4444);
+  --admin-menu-bg: var(--admin-menu-bg, #111827);
+  --admin-menu-text: var(--admin-menu-text, #e5e7eb);
+  --admin-menu-hover: var(--admin-menu-hover, #1f2937);
+  --admin-bar: var(--admin-bar, #0b1220);
+}
+
+/* Global */
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+/* Header */
+.header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Search input */
+.header .search {
+  border: 1px solid var(--border);
+  background: #1b2430; /* darker input bg */
+  color: var(--text);
+}
+
+/* Sidebar / navigation */
+.nav-item {
+  color: var(--text);
+}
+.nav-item:hover {
+  /* light tint of primary for hover, dark-friendly */
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--text);
+}
+
+/* Buttons */
+.btn {
+  background: var(--primary);
+  color: #fff;
+}
+.btn.secondary {
+  background: #2b3643;
+  color: var(--text);
+}
+
+/* Profile header cover */
+.profile-header .cover {
+  background: linear-gradient(135deg, #17202a, #0f172a);
+  border: 1px solid var(--border);
+}
+
+/* Badge / small pills */
+.badge {
+  background: #1b2430;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* Tabs */
+.tabs {
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  color: var(--muted);
+}
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--primary);
+}
+
+/* Right bar widgets */
+.rightbar .widget {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+/* Links */
+.nav-link:hover {
+  color: var(--primary);
+}
+
+/* Tags */
+.post-tags .tag {
+  background: var(--card);
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+.post-tags .tag:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Comments / code blocks */
+.page-content .post-content code {
+  background: #0b1220;
+  color: var(--text);
+}
+.page-content .post-content pre {
+  background: #0b1220;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.page-content .post-content pre code {
+  background: transparent;
+  color: inherit;
+}
+
+/* Current page item */
+.current-page {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+/* Icon actions */
+.icon-action {
+  color: var(--muted);
+}
+.icon-action:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+.icon-action[aria-pressed="true"] {
+  color: var(--primary);
+}
+
+/* Mini profile */
+.mini-profile {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.mini-avatar {
+  color: #fff;
+  /* keep your accent if desired */
+}
+
+/* Inputs */
+.input, .textarea {
+  background: #0b1220;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* Page content images */
+.page-content .post-content img {
+  border: 1px solid var(--border);
+}
+
+/* Generic hover tint utility where applicable */
+.nav-item:hover,
+.icon-action:hover,
+.current-page,
+.nav-link:hover {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Responsive tweaks remain the same as base, colors are variable-driven */
