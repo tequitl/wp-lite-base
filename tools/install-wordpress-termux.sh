@@ -6,7 +6,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${GREEN}=== WordPress on Termux: Interactive Install ===${NC}"
+echo -e "${GREEN}=== WordPress on Termux: Interactive Install/Run ===${NC}"
 
 prompt() {
   local msg="$1"; local def="$2"; local var
@@ -32,23 +32,70 @@ prompt_secret() {
   done
 }
 
+ensure_cmd() {
+  local cmd="$1"; local pkg="$2"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo -e "${YELLOW}Installing $pkg...${NC}"
+    pkg install -y "$pkg" >/dev/null 2>&1
+  fi
+}
+
+ensure_php_ext() {
+  local ext="$1"; local pkg="$2"
+  if php -m 2>/dev/null | grep -qi "^${ext}$"; then
+    return 0
+  else
+    echo -e "${YELLOW}Installing $pkg...${NC}"
+    pkg install -y "$pkg" >/dev/null 2>&1
+  fi
+}
+
+is_wp_dir() {
+  local dir="$1"
+  [ -f "$dir/wp-load.php" ] && [ -d "$dir/wp-admin" ] && [ -d "$dir/wp-includes" ]
+}
+
+echo -e "${YELLOW}Checking base dependencies...${NC}"
+pkg update -y >/dev/null 2>&1 || true
+ensure_cmd php php
+ensure_cmd wget wget
+ensure_cmd unzip unzip
+ensure_cmd tar tar
+
 PWD_DIR="$(pwd)"
-DEFAULT_DIR="$PWD_DIR/wordpress"
-TARGET_DIR="$(prompt "Install directory" "$DEFAULT_DIR")"
+RUN_BASE_DIR="$(prompt "Folder to run" "$PWD_DIR")"
+if [ ! -d "$RUN_BASE_DIR" ]; then mkdir -p "$RUN_BASE_DIR"; fi
+
+if is_wp_dir "$RUN_BASE_DIR"; then
+  START_SERVER="$(prompt "Start PHP dev server now? (y/n)" "y")"
+  SERVER_PORT="$(prompt "PHP dev server port" "8080")"
+  if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
+    echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
+    php -S 127.0.0.1:"$SERVER_PORT" -t "$RUN_BASE_DIR"
+  else
+    echo -e "${YELLOW}You can start the server with:${NC}"
+    echo "php -S 127.0.0.1:$SERVER_PORT -t '$RUN_BASE_DIR'"
+  fi
+  exit 0
+fi
+
+SITE_NAME="$(prompt "Site name (used for new folder)" "mysite")"
+SITE_SLUG=$(echo "$SITE_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+if [ -z "$SITE_SLUG" ]; then SITE_SLUG="mysite"; fi
+TARGET_DIR="$RUN_BASE_DIR/$SITE_SLUG"
 
 DB_ROOT_PASSWORD="$(prompt_secret "MariaDB root password")"
-DB_NAME="$(prompt "Database name" "wordpress")"
-DB_USER="$(prompt "Database user" "wpuser")"
+DB_NAME="$(prompt "Database name" "${SITE_SLUG//-/_}")"
+DB_USER="$(prompt "Database user" "${SITE_SLUG//-/_}_user")"
 DB_PASSWORD="$(prompt_secret "Database user password")"
 
-SITE_URL="$(prompt "Site URL" "http://127.0.0.1:8080")"
-SITE_TITLE="$(prompt "Site title" "My WordPress")"
+SITE_TITLE="$(prompt "Site title" "$SITE_NAME")"
+START_SERVER="$(prompt "Start PHP dev server after install? (y/n)" "y")"
+SERVER_PORT="$(prompt "PHP dev server port" "8080")"
+SITE_URL="$(prompt "Site URL" "http://127.0.0.1:$SERVER_PORT")"
 ADMIN_USER="$(prompt "Admin user" "admin")"
 ADMIN_PASSWORD="$(prompt_secret "Admin password")"
 ADMIN_EMAIL="$(prompt "Admin email" "admin@example.com")"
-
-START_SERVER="$(prompt "Start PHP dev server after install? (y/n)" "y")"
-SERVER_PORT="$(prompt "PHP dev server port" "8080")"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 BIN_DIR="$PREFIX/bin"
@@ -57,9 +104,14 @@ RUN_DIR="$PREFIX/var/run/mysqld"
 SOCKET="$RUN_DIR/mysqld.sock"
 PID_FILE="$RUN_DIR/mysqld.pid"
 
-echo -e "${YELLOW}Installing packages...${NC}"
-pkg update -y >/dev/null 2>&1 || true
-pkg install -y php php-mysqli php-gd php-curl php-zip php-mbstring php-xml wget unzip mariadb tar >/dev/null 2>&1
+echo -e "${YELLOW}Ensuring required PHP extensions and MariaDB...${NC}"
+ensure_php_ext mysqli php-mysqli
+ensure_php_ext gd php-gd
+ensure_php_ext curl php-curl
+ensure_php_ext zip php-zip
+ensure_php_ext mbstring php-mbstring
+ensure_php_ext xml php-xml
+ensure_cmd mysqld mariadb
 
 mkdir -p "$RUN_DIR" "$DATA_DIR"
 
@@ -108,14 +160,9 @@ fi
 TMP_DIR="$(mktemp -d)"
 tar -xzf "$WP_ARCHIVE" -C "$TMP_DIR"
 EXTRACTED_DIR="$TMP_DIR/wordpress"
-
-if [ -d "$TARGET_DIR" ] && [ -n "$(ls -A "$TARGET_DIR" 2>/dev/null)" ]; then
-  echo -e "${YELLOW}Target directory exists and is not empty. Using it as is.${NC}"
-else
-  mkdir -p "$TARGET_DIR"
-  rm -rf "$TARGET_DIR"/* 2>/dev/null || true
-  mv "$EXTRACTED_DIR"/* "$TARGET_DIR"/
-fi
+mkdir -p "$TARGET_DIR"
+rm -rf "$TARGET_DIR"/* 2>/dev/null || true
+mv "$EXTRACTED_DIR"/* "$TARGET_DIR"/
 rm -rf "$TMP_DIR"
 
 echo -e "${YELLOW}Installing WP-CLI...${NC}"
