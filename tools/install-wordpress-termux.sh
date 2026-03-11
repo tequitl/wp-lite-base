@@ -113,6 +113,7 @@ if [ -z "${DB_ROOT_PASSWORD:-}" ]; then DB_ROOT_PASSWORD="$(prompt_secret "Maria
 if [ -z "${DB_NAME:-}" ]; then DB_NAME="$(prompt "Database name" "${SITE_SLUG//-/_}")"; fi
 if [ -z "${DB_USER:-}" ]; then DB_USER="$(prompt "Database user" "wpuser")"; fi
 if [ -z "${DB_PASSWORD:-}" ]; then DB_PASSWORD="$(prompt_secret "Database user password")"; fi
+
 save_credentials
 
 SITE_TITLE="$(prompt "Site title" "$SITE_NAME")"
@@ -228,6 +229,27 @@ echo -e "${YELLOW}Installing WordPress core...${NC}"
   --admin_password="$ADMIN_PASSWORD" \
   --admin_email="$ADMIN_EMAIL" \
   --skip-email
+  
+
+  APPLY_SQLITE="$(prompt "Apply SQLite Database Integration now? (y/n)" "y")"
+  if [ "${APPLY_SQLITE,,}" = "y" ] || [ "${APPLY_SQLITE,,}" = "yes" ]; then
+    echo -e "${YELLOW}Preparing SQLite drop-in (db.php) and database folder...${NC}"
+    mkdir -p "wp-content/plugins" "wp-content/database"
+    PLUGIN_ZIP="$(mktemp -t sdi.XXXXXX).zip"
+    if wget -q -O "$PLUGIN_ZIP" "https://downloads.wordpress.org/plugin/sqlite-database-integration.zip"; then
+      unzip -oq "$PLUGIN_ZIP" -d "wp-content/plugins"
+      rm -f "$PLUGIN_ZIP"
+    else
+      echo -e "${RED}Failed to download SQLite Database Integration plugin archive${NC}"; exit 1
+    fi
+    if [ -f "wp-content/plugins/sqlite-database-integration/db.php" ]; then
+      cp -f "wp-content/plugins/sqlite-database-integration/db.php" "wp-content/db.php"
+    else
+      echo -e "${RED}db.php not found in plugin directory${NC}"; exit 1
+    fi
+  else
+    echo -e "${RED}SQLite engine selected but db.php not applied. Aborting by user choice.${NC}"; exit 1
+  fi
 
 echo -e "${GREEN}WordPress installed in: $TARGET_DIR${NC}"
 if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
