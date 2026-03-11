@@ -233,19 +233,13 @@ echo -e "${YELLOW}Installing WordPress core...${NC}"
 
   APPLY_SQLITE="$(prompt "Apply SQLite Database Integration now? (y/n)" "y")"
   if [ "${APPLY_SQLITE,,}" = "y" ] || [ "${APPLY_SQLITE,,}" = "yes" ]; then
-    echo -e "${YELLOW}Preparing SQLite drop-in (db.php) and database folder...${NC}"
-    mkdir -p "wp-content/plugins" "wp-content/database"
-    PLUGIN_ZIP="$(mktemp -t sdi.XXXXXX).zip"
-    if wget -q -O "$PLUGIN_ZIP" "https://downloads.wordpress.org/plugin/sqlite-database-integration.zip"; then
-      unzip -oq "$PLUGIN_ZIP" -d "wp-content/plugins"
-      rm -f "$PLUGIN_ZIP"
-    else
-      echo -e "${RED}Failed to download SQLite Database Integration plugin archive${NC}"; exit 1
-    fi
+    echo -e "${YELLOW}Installing and activating SQLite Database Integration plugin...${NC}"
+    "$WP_CMD" plugin install sqlite-database-integration --activate --force
+    echo -e "${YELLOW}Placing db.php drop-in and creating database folder...${NC}"
     if [ -f "wp-content/plugins/sqlite-database-integration/db.php" ]; then
       cp -f "wp-content/plugins/sqlite-database-integration/db.php" "wp-content/db.php"
     else
-      echo -e "${RED}db.php not found in plugin directory${NC}"; exit 1
+      echo -e "${RED}db.php not found in plugin directory${NC}";
     fi
   else
     echo -e "${RED}SQLite engine selected but db.php not applied. Aborting by user choice.${NC}"; exit 1
