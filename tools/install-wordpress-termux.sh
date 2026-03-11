@@ -83,7 +83,7 @@ ensure_cmd wget wget
 ensure_cmd unzip unzip
 ensure_cmd tar tar
 
-load_credentials
+
 
 PWD_DIR="$(pwd)"
 RUN_BASE_DIR="$(prompt "Folder to run" "$PWD_DIR")"
@@ -102,6 +102,8 @@ if is_wp_dir "$RUN_BASE_DIR"; then
   exit 0
 fi
 
+load_credentials
+
 SITE_NAME="$(prompt "Site name (used for new folder)" "mysite")"
 SITE_SLUG=$(echo "$SITE_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
 if [ -z "$SITE_SLUG" ]; then SITE_SLUG="mysite"; fi
@@ -117,8 +119,16 @@ SITE_TITLE="$(prompt "Site title" "$SITE_NAME")"
 START_SERVER="$(prompt "Start PHP dev server after install? (y/n)" "y")"
 SERVER_PORT="$(prompt "PHP dev server port" "8080")"
 SITE_URL="$(prompt "Site URL" "http://127.0.0.1:$SERVER_PORT")"
-ADMIN_USER="$(prompt "Admin user" "admin")"
-ADMIN_PASSWORD="$(prompt_secret "Admin password")"
+ADMIN_USER="$(prompt "Admin user (press Enter for 'admin')" "admin")"
+# Allow empty input to auto-generate a password
+ADMIN_PASSWORD_INPUT="$(prompt "Admin password (Enter to auto-generate)" "")"
+if [ -z "$ADMIN_PASSWORD_INPUT" ]; then
+  ADMIN_PASSWORD="$(head /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 5)"
+  ADMIN_PASSWORD_AUTO=true
+else
+  ADMIN_PASSWORD="$ADMIN_PASSWORD_INPUT"
+  ADMIN_PASSWORD_AUTO=false
+fi
 ADMIN_EMAIL="$(prompt "Admin email" "admin@example.com")"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
@@ -221,6 +231,8 @@ echo -e "${YELLOW}Installing WordPress core...${NC}"
 
 echo -e "${GREEN}WordPress installed in: $TARGET_DIR${NC}"
 if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
+  echo -e "${YELLOW}Admin user: ${ADMIN_USER}${NC}"
+  echo -e "${YELLOW}Admin password: ${ADMIN_PASSWORD}${NC}"
   echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
   php -S 127.0.0.1:"$SERVER_PORT" -t "$TARGET_DIR"
 else
