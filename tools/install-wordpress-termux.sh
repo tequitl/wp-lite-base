@@ -55,6 +55,24 @@ is_wp_dir() {
   [ -f "$dir/wp-load.php" ] && [ -d "$dir/wp-admin" ] && [ -d "$dir/wp-includes" ]
 }
 
+ensure_npm() {
+  if ! command -v npm >/dev/null 2>&1; then
+    echo -e "${YELLOW}Installing Node.js (npm)...${NC}"
+    pkg install -y nodejs >/dev/null 2>&1 || pkg install -y nodejs-lts >/dev/null 2>&1
+  fi
+}
+
+ensure_localtunnel() {
+  if command -v lt >/dev/null 2>&1; then
+    return 0
+  fi
+  ensure_npm
+  local pref="${PREFIX:-/data/data/com.termux/files/usr}"
+  npm config set prefix "$pref" >/dev/null 2>&1 || true
+  echo -e "${YELLOW}Installing localtunnel globally...${NC}"
+  npm install -g localtunnel >/dev/null 2>&1 || npm install -g localtunnel
+}
+
 echo -e "${YELLOW}Checking base dependencies...${NC}"
 pkg update -y >/dev/null 2>&1 || true
 ensure_cmd php php
@@ -69,6 +87,10 @@ if [ ! -d "$RUN_BASE_DIR" ]; then mkdir -p "$RUN_BASE_DIR"; fi
 if is_wp_dir "$RUN_BASE_DIR"; then
   START_SERVER="$(prompt "Start PHP dev server now? (y/n)" "y")"
   SERVER_PORT="$(prompt "PHP dev server port" "8080")"
+  SETUP_TUNNEL="$(prompt "Ensure npm and localtunnel? (y/n)" "n")"
+  if [ "${SETUP_TUNNEL,,}" = "y" ] || [ "${SETUP_TUNNEL,,}" = "yes" ]; then
+    ensure_localtunnel
+  fi
   if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
     echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
     php -S 127.0.0.1:"$SERVER_PORT" -t "$RUN_BASE_DIR"
@@ -96,6 +118,7 @@ SITE_URL="$(prompt "Site URL" "http://127.0.0.1:$SERVER_PORT")"
 ADMIN_USER="$(prompt "Admin user" "admin")"
 ADMIN_PASSWORD="$(prompt_secret "Admin password")"
 ADMIN_EMAIL="$(prompt "Admin email" "admin@example.com")"
+SETUP_TUNNEL="$(prompt "Ensure npm and localtunnel? (y/n)" "n")"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 BIN_DIR="$PREFIX/bin"
@@ -197,6 +220,9 @@ echo -e "${YELLOW}Installing WordPress core...${NC}"
 
 echo -e "${GREEN}WordPress installed in: $TARGET_DIR${NC}"
 if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
+  if [ "${SETUP_TUNNEL,,}" = "y" ] || [ "${SETUP_TUNNEL,,}" = "yes" ]; then
+    ensure_localtunnel
+  fi
   echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
   php -S 127.0.0.1:"$SERVER_PORT" -t "$TARGET_DIR"
 else
