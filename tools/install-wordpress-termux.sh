@@ -117,6 +117,29 @@ start_tunnel() {
   esac
 }
 
+wait_for_port() {
+  local port="$1"
+  for i in $(seq 1 30); do
+    (echo > /dev/tcp/127.0.0.1/$port) >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  return 1
+}
+
+start_server_bg() {
+  local dir="$1"; local port="$2"
+  php -S 127.0.0.1:"$port" -t "$dir" &
+  SERVER_PID=$!
+}
+
+trap_handler() {
+  if [ -n "$TUNNEL_PID" ]; then kill "$TUNNEL_PID" >/dev/null 2>&1 || true; fi
+  if [ -n "$SERVER_PID" ]; then kill "$SERVER_PID" >/dev/null 2>&1 || true; fi
+  exit 0
+}
+
+trap 'trap_handler' INT TERM
+
 echo -e "${YELLOW}Checking base dependencies...${NC}"
 pkg update -y >/dev/null 2>&1 || true
 ensure_cmd php php
@@ -133,9 +156,11 @@ if is_wp_dir "$RUN_BASE_DIR"; then
   SERVER_PORT="$(prompt "PHP dev server port" "8080")"
   TUNNEL_CHOICE="$(prompt "Expose public URL? [none/cloudflared/ssh/localtunnel]" "none")"
   if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
-    start_tunnel "$TUNNEL_CHOICE" "$SERVER_PORT"
     echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
-    php -S 127.0.0.1:"$SERVER_PORT" -t "$RUN_BASE_DIR"
+    start_server_bg "$RUN_BASE_DIR" "$SERVER_PORT"
+    wait_for_port "$SERVER_PORT" || true
+    start_tunnel "$TUNNEL_CHOICE" "$SERVER_PORT"; TUNNEL_PID=$!
+    wait "$SERVER_PID"
   else
     echo -e "${YELLOW}You can start the server with:${NC}"
     echo "php -S 127.0.0.1:$SERVER_PORT -t '$RUN_BASE_DIR'"
@@ -262,9 +287,11 @@ echo -e "${YELLOW}Installing WordPress core...${NC}"
 
 echo -e "${GREEN}WordPress installed in: $TARGET_DIR${NC}"
 if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
-  start_tunnel "$TUNNEL_CHOICE" "$SERVER_PORT"
   echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
-  php -S 127.0.0.1:"$SERVER_PORT" -t "$TARGET_DIR"
+  start_server_bg "$TARGET_DIR" "$SERVER_PORT"
+  wait_for_port "$SERVER_PORT" || true
+  start_tunnel "$TUNNEL_CHOICE" "$SERVER_PORT"; TUNNEL_PID=$!
+  wait "$SERVER_PID"
 else
   echo -e "${YELLOW}You can start the server with:${NC}"
   echo "php -S 127.0.0.1:$SERVER_PORT -t '$TARGET_DIR'"
