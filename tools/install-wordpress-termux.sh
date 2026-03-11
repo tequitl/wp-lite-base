@@ -70,7 +70,51 @@ ensure_localtunnel() {
   local pref="${PREFIX:-/data/data/com.termux/files/usr}"
   npm config set prefix "$pref" >/dev/null 2>&1 || true
   echo -e "${YELLOW}Installing localtunnel globally...${NC}"
-  npm install -g localtunnel >/dev/null 2>&1 || npm install -g localtunnel
+  npm install -g localtunnel >/dev/null 2>&1 || npm install -g localtunnel || return 1
+  local lt_dir
+  lt_dir="$(npm root -g 2>/dev/null)/localtunnel"
+  if [ -n "$lt_dir" ] && [ -f "$lt_dir/node_modules/openurl/openurl.js" ]; then
+    sed -i "s/throw new Error(.*process.platform.*)/module.exports.open=function(){}; module.exports.browser=function(){};/" "$lt_dir/node_modules/openurl/openurl.js" || true
+  fi
+}
+
+ensure_cloudflared() {
+  if command -v cloudflared >/dev/null 2>&1; then
+    return 0
+  fi
+  echo -e "${YELLOW}Installing cloudflared (quick tunnel)...${NC}"
+  local arch asset url
+  arch="$(uname -m)"
+  case "$arch" in
+    aarch64) asset="cloudflared-linux-arm64" ;;
+    arm*) asset="cloudflared-linux-arm" ;;
+    x86_64) asset="cloudflared-linux-amd64" ;;
+    i686|i386) asset="cloudflared-linux-386" ;;
+    *) echo -e "${RED}Unsupported arch for cloudflared: $arch${NC}"; return 1 ;;
+  esac
+  url="https://github.com/cloudflare/cloudflared/releases/latest/download/${asset}"
+  mkdir -p "$PREFIX/bin"
+  wget -q "$url" -O "$PREFIX/bin/cloudflared" && chmod +x "$PREFIX/bin/cloudflared"
+}
+
+start_tunnel() {
+  local kind="$1"; local port="$2"; local host="127.0.0.1"
+  case "$kind" in
+    cloudflared)
+      ensure_cloudflared || return 0
+      (cloudflared tunnel --url http://$host:$port --no-autoupdate 2>&1 | sed -n 's#.*https://[A-Za-z0-9.-]*trycloudflare.com.*#Public URL: & #p') &
+      ;;
+    ssh)
+      ensure_cmd ssh openssh
+      (ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R 80:localhost:$port nokey@localhost.run 2>&1 | sed -n 's#.*https://.*#Public URL: & #p') &
+      ;;
+    localtunnel)
+      ensure_localtunnel || return 0
+      (lt --port "$port" 2>&1 | sed -n 's#^your url is: #Public URL: #p;s#https://.*#& #p') &
+      ;;
+    none|"") return 0 ;;
+    *) ;;
+  esac
 }
 
 echo -e "${YELLOW}Checking base dependencies...${NC}"
@@ -87,11 +131,9 @@ if [ ! -d "$RUN_BASE_DIR" ]; then mkdir -p "$RUN_BASE_DIR"; fi
 if is_wp_dir "$RUN_BASE_DIR"; then
   START_SERVER="$(prompt "Start PHP dev server now? (y/n)" "y")"
   SERVER_PORT="$(prompt "PHP dev server port" "8080")"
-  SETUP_TUNNEL="$(prompt "Ensure npm and localtunnel? (y/n)" "n")"
-  if [ "${SETUP_TUNNEL,,}" = "y" ] || [ "${SETUP_TUNNEL,,}" = "yes" ]; then
-    ensure_localtunnel
-  fi
+  TUNNEL_CHOICE="$(prompt "Expose public URL? [none/cloudflared/ssh/localtunnel]" "none")"
   if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
+    start_tunnel "$TUNNEL_CHOICE" "$SERVER_PORT"
     echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
     php -S 127.0.0.1:"$SERVER_PORT" -t "$RUN_BASE_DIR"
   else
@@ -114,11 +156,11 @@ DB_PASSWORD="$(prompt_secret "Database user password")"
 SITE_TITLE="$(prompt "Site title" "$SITE_NAME")"
 START_SERVER="$(prompt "Start PHP dev server after install? (y/n)" "y")"
 SERVER_PORT="$(prompt "PHP dev server port" "8080")"
+TUNNEL_CHOICE="$(prompt "Expose public URL? [none/cloudflared/ssh/localtunnel]" "none")"
 SITE_URL="$(prompt "Site URL" "http://127.0.0.1:$SERVER_PORT")"
 ADMIN_USER="$(prompt "Admin user" "admin")"
 ADMIN_PASSWORD="$(prompt_secret "Admin password")"
 ADMIN_EMAIL="$(prompt "Admin email" "admin@example.com")"
-SETUP_TUNNEL="$(prompt "Ensure npm and localtunnel? (y/n)" "n")"
 
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 BIN_DIR="$PREFIX/bin"
@@ -220,9 +262,7 @@ echo -e "${YELLOW}Installing WordPress core...${NC}"
 
 echo -e "${GREEN}WordPress installed in: $TARGET_DIR${NC}"
 if [ "${START_SERVER,,}" = "y" ] || [ "${START_SERVER,,}" = "yes" ]; then
-  if [ "${SETUP_TUNNEL,,}" = "y" ] || [ "${SETUP_TUNNEL,,}" = "yes" ]; then
-    ensure_localtunnel
-  fi
+  start_tunnel "$TUNNEL_CHOICE" "$SERVER_PORT"
   echo -e "${YELLOW}Starting PHP dev server on 127.0.0.1:${SERVER_PORT}${NC}"
   php -S 127.0.0.1:"$SERVER_PORT" -t "$TARGET_DIR"
 else
