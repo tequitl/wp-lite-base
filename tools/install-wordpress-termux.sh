@@ -116,6 +116,7 @@ if [ -z "${DB_PASSWORD:-}" ]; then DB_PASSWORD="$(prompt_secret "Database user p
 
 save_credentials
 
+APPLY_SQLITE="$(prompt "Apply SQLite Database Integration? (recommended to do it portable) (y/n)" "y")"
 SITE_TITLE="$(prompt "Site title" "$SITE_NAME")"
 START_SERVER="$(prompt "Start PHP dev server after install? (y/n)" "y")"
 SERVER_PORT="$(prompt "PHP dev server port" "8080")"
@@ -231,13 +232,13 @@ echo -e "${YELLOW}Installing WordPress core...${NC}"
   --skip-email
   
 
-  APPLY_SQLITE="$(prompt "Apply SQLite Database Integration now? (y/n)" "y")"
+
   if [ "${APPLY_SQLITE,,}" = "y" ] || [ "${APPLY_SQLITE,,}" = "yes" ]; then
     echo -e "${YELLOW}Installing and activating SQLite Database Integration plugin...${NC}"
     "$WP_CMD" plugin install sqlite-database-integration --activate --force
     echo -e "${YELLOW}Placing db.php drop-in and creating database folder...${NC}"
-    if [ -f "wp-content/plugins/sqlite-database-integration/db.php" ]; then
-      cp -f "wp-content/plugins/sqlite-database-integration/db.php" "wp-content/db.php"
+    if [ -f "wp-content/plugins/sqlite-database-integration/db.copy" ]; then
+      cp -f "wp-content/plugins/sqlite-database-integration/db.copy" "wp-content/db.php"
     else
       echo -e "${RED}db.php not found in plugin directory${NC}";
     fi
