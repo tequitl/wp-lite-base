@@ -12,8 +12,8 @@ chmod +x install-wordpress-macos.sh
 ### Termux (Android)
 ```bash
 pkg update -y
-pkg install -y curl
-curl -fsSL https://raw.githubusercontent.com/tequitl/wp-net-base/refs/heads/main/tools/install-wordpress-termux.sh -o install-wordpress-termux.sh
+pkg install -y wget
+wget -O install-wordpress-termux.sh https://raw.githubusercontent.com/tequitl/wp-net-base/refs/heads/main/tools/install-wordpress-termux.sh
 chmod +x install-wordpress-termux.sh
 ./install-wordpress-termux.sh
 ```
