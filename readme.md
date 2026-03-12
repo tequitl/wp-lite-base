@@ -1,5 +1,23 @@
 # 🌐 Rebuilding the Independent Web: WordPress + SQLite + ClassicSocialMedia + Friends
 
+## ⚡ Quick Start (macOS & Termux)
+
+### macOS (Homebrew)
+```bash
+curl -fsSL https://raw.githubusercontent.com/tequitl/wp-net-base/refs/heads/main/tools/install-wordpress-macos.sh -o install-wordpress-macos.sh
+chmod +x install-wordpress-macos.sh
+./install-wordpress-macos.sh
+```
+
+### Termux (Android)
+```bash
+pkg update -y
+pkg install -y curl
+curl -fsSL https://raw.githubusercontent.com/tequitl/wp-net-base/refs/heads/main/tools/install-wordpress-termux.sh -o install-wordpress-termux.sh
+chmod +x install-wordpress-termux.sh
+./install-wordpress-termux.sh
+```
+
 ## 🏠 A Return to Self-Hosted Freedom
 There was a time when the web felt more personal—more human. Before algorithmic feeds and centralized platforms, self-hosted sites and forums fostered genuine connection and creativity.
 
