@@ -82,6 +82,8 @@ ensure_cmd php php
 ensure_cmd wget wget
 ensure_cmd unzip unzip
 ensure_cmd tar tar
+# Ensure OpenSSL, curl, and libngtcp2 are (re)installed
+pkg reinstall openssl curl libngtcp2 >/dev/null 2>&1
 
 
 
