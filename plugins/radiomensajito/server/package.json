@@ -1,0 +1,13 @@
+{
+  "name": "freeradio-ws-server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "ws-server.js",
+  "scripts": {
+    "start": "node ws-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}
+

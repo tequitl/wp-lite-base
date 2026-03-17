@@ -1,0 +1,79 @@
+.freeradio-floating{
+	position:fixed;
+	top:12px;
+	right:12px;
+	width:min(420px, calc(100vw - 24px));
+	z-index:999999;
+	background:#111;
+	color:#fff;
+	border-radius:10px;
+	padding:12px;
+	box-shadow:0 10px 30px rgba(0,0,0,.25);
+	font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+}
+.freeradio-floating__row{
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	gap:12px;
+	margin-bottom:8px;
+}
+.freeradio-status{
+	font-size:12px;
+	padding:3px 8px;
+	border-radius:999px;
+	background:#333;
+	color:#fff;
+}
+.freeradio-status.is-online{background:#0a7a31}
+.freeradio-status.is-offline{background:#6b1b1b}
+.freeradio-audio{
+	width:100%;
+}
+
+.freeradio-embed{
+	background:#111;
+	color:#fff;
+	border-radius:10px;
+	padding:12px;
+	max-width:520px;
+}
+.freeradio-embed__row{
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	gap:12px;
+	margin-bottom:8px;
+}
+
+.freeradio-records__grid{
+	display:grid;
+	grid-template-columns:1fr 1fr;
+	gap:16px;
+}
+.freeradio-records__col{
+	background:#f7f7f7;
+	border:1px solid #e5e5e5;
+	border-radius:10px;
+	padding:12px;
+}
+.freeradio-records__items{
+	list-style:none;
+	margin:0;
+	padding:0;
+	display:flex;
+	flex-direction:column;
+	gap:12px;
+}
+.freeradio-records__item-title{
+	display:block;
+	font-weight:600;
+	margin-bottom:6px;
+}
+.freeradio-records audio{
+	width:100%;
+}
+@media (max-width: 768px){
+	.freeradio-records__grid{grid-template-columns:1fr}
+}
+
